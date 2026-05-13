@@ -1,6 +1,28 @@
 export type OvrGrade = "S" | "A" | "B" | "C";
 export type Availability = "immediate" | "negotiable" | "employed";
-export type PreviousTier = "tier1_kr" | "tier2_kr" | "tier1_vn" | "tier2_vn";
+
+export interface DetailedSkill {
+  name: string;
+  score: number;
+  type: "core" | "sub";
+}
+
+export interface CareerEntry {
+  tier: string;
+  position: string;
+  startDate: string;
+  endDate: string | "current";
+  current: boolean;
+}
+
+export interface Abilities {
+  technical: number;
+  korean: number;
+  english: number;
+  collaboration: number;
+  stability: number;
+  growth: number;
+}
 
 export interface Talent {
   id: string;
@@ -12,11 +34,11 @@ export interface Talent {
   ovr_grade: OvrGrade;
   top_skills: [string, string];
   korean_level: 1 | 2 | 3 | 4 | 5;
-  english_level?: number;
   desired_salary_usd: number;
   availability: Availability;
-  previous_tier?: PreviousTier;
-  detailed_skills?: Record<string, number>;
-  created_at: string;
-  updated_at: string;
+  ktc_comment: string;
+  abilities: Abilities;
+  detailed_skills: DetailedSkill[];
+  career_history: CareerEntry[];
+  tags: string[];
 }

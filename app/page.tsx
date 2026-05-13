@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { dummyTalents } from "@/lib/dummy-talents";
 import { TalentCard } from "@/app/components/talent/TalentCard";
 import { FilterChips } from "@/app/components/talent/FilterChips";
@@ -56,7 +57,9 @@ export default function Home() {
         {/* 카드 그리드 */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-[10px]">
           {dummyTalents.map((talent) => (
-            <TalentCard key={talent.id} talent={talent} />
+            <Link key={talent.id} href={`/talents/${talent.id}`}>
+              <TalentCard talent={talent} />
+            </Link>
           ))}
         </div>
 
