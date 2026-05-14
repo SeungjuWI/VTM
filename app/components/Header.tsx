@@ -42,12 +42,25 @@ export function Header() {
   return (
     <header className="bg-white sticky top-0 z-50">
       <div className="mx-auto max-w-[1080px] px-5 h-[56px] flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <img src="/logo.png" alt="VTM" width={24} height={24} className="rounded-[4px]" />
-          <span className="text-[18px] text-gray-900 tracking-tight" style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700 }}>
-            Vtm
-          </span>
-        </Link>
+        <div className="flex items-center gap-6">
+          <Link href="/" className="flex items-center gap-2">
+            <img src="/logo.png" alt="VTM" width={24} height={24} className="rounded-[4px]" />
+            <span className="text-[18px] text-gray-900 tracking-tight" style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700 }}>
+              Vtm
+            </span>
+          </Link>
+          <nav className="hidden sm:flex items-center gap-5">
+            <Link href="/talents" className="text-[14px] text-gray-600 hover:text-gray-900 transition-colors">
+              인재 열람
+            </Link>
+            <Link href="/notice" className="text-[14px] text-gray-600 hover:text-gray-900 transition-colors">
+              공지사항
+            </Link>
+            <Link href="/qna" className="text-[14px] text-gray-600 hover:text-gray-900 transition-colors">
+              Q&A
+            </Link>
+          </nav>
+        </div>
 
         {user ? (
           <div className="relative">
@@ -55,15 +68,10 @@ export function Header() {
               onClick={() => setShowMenu(!showMenu)}
               className="flex items-center gap-2"
             >
-              {user.avatar ? (
-                <img src={user.avatar} alt="" className="w-8 h-8 rounded-full" />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
-                  <span className="text-[13px] font-medium text-blue-500">
-                    {user.email?.charAt(0)?.toUpperCase()}
-                  </span>
-                </div>
-              )}
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                <circle cx="14" cy="11" r="4.5" stroke="#8B95A1" strokeWidth="1.5"/>
+                <path d="M5.5 24c0-4.14 3.82-7.5 8.5-7.5s8.5 3.36 8.5 7.5" stroke="#8B95A1" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
             </button>
 
             {showMenu && (
