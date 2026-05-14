@@ -20,3 +20,122 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* 섹션 등장 애니메이션 */
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-section {
+  animation: fadeSlideUp 0.45s ease-out both;
+}
+
+.animate-delay-1 { animation-delay: 0.08s; }
+.animate-delay-2 { animation-delay: 0.16s; }
+.animate-delay-3 { animation-delay: 0.24s; }
+.animate-delay-4 { animation-delay: 0.32s; }
+
+/* 프로그레스 바 채움 */
+@keyframes barFill {
+  from { width: 0%; }
+}
+
+.animate-bar {
+  animation: barFill 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0.3s;
+}
+
+/* 레이더 차트 — 중심에서 퍼지며 차오름 */
+@keyframes radarDraw {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-radar {
+  animation: radarDraw 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0.4s;
+  transform-origin: center;
+}
+
+/* OVR 숫자 팝 */
+@keyframes ovrPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  60% {
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-ovr {
+  animation: ovrPop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0.1s;
+}
+
+/* ─── 랜딩 히어로 일러스트 ─── */
+
+/* 메인 카드: 왼쪽에서 슬라이드 + 페이드 */
+@keyframes landingCardIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.landing-card-main {
+  animation: landingCardIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0.2s;
+}
+
+/* 레이더: 중심에서 퍼짐 */
+@keyframes landingRadarIn {
+  from { opacity: 0; transform: scale(0); }
+  to { opacity: 1; transform: scale(1); }
+}
+.landing-radar {
+  animation: landingRadarIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0.6s;
+}
+
+/* 뱃지: 아래에서 올라옴 */
+@keyframes landingBadgeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.landing-badge {
+  animation: landingBadgeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0.9s;
+}
+
+/* 장식 점: 느린 떠다님 */
+@keyframes dotFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.landing-dot-1 {
+  animation: dotFloat 3s ease-in-out infinite;
+}
+.landing-dot-2 {
+  animation: dotFloat 3.5s ease-in-out infinite;
+  animation-delay: 0.5s;
+}
+.landing-dot-3 {
+  animation: dotFloat 2.8s ease-in-out infinite;
+  animation-delay: 1s;
+}
+

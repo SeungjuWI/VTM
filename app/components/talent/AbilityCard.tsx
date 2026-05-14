@@ -1,4 +1,8 @@
+"use client";
+
 import { Talent } from "@/lib/types";
+import { RadarChart } from "./RadarChart";
+import { AnimatedOVR } from "./AnimatedOVR";
 
 const ABILITY_LABELS: Record<string, string> = {
   technical: "기술력",
@@ -41,7 +45,7 @@ function getAvailabilityText(availability: string) {
 
 export function AbilityCard({ talent }: { talent: Talent }) {
   return (
-    <div className="bg-white border-[0.5px] border-gray-200/60 rounded-[20px] p-6 mb-3">
+    <div className="bg-white border-[0.5px] border-gray-200/60 rounded-[20px] p-6 mb-3 animate-section">
       {/* B-1. 헤더 */}
       <div className="flex items-start gap-4 mb-6">
         <div className="w-[72px] h-[72px] rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
@@ -59,10 +63,10 @@ export function AbilityCard({ talent }: { talent: Talent }) {
           </p>
         </div>
         <div
-          className={`text-center px-4 py-2.5 rounded-xl flex-shrink-0 ${getGradeStyle(talent.ovr_grade)}`}
+          className={`text-center px-4 py-2.5 rounded-xl flex-shrink-0 animate-ovr ${getGradeStyle(talent.ovr_grade)}`}
         >
           <p className="text-[24px] font-medium leading-none">
-            {talent.ovr_score}
+            <AnimatedOVR target={talent.ovr_score} />
           </p>
           <p className="text-[11px] font-medium mt-1">
             OVR · {talent.ovr_grade}
@@ -78,10 +82,13 @@ export function AbilityCard({ talent }: { talent: Talent }) {
         </p>
       </div>
 
-      {/* B-3. 6대 능력치 */}
+      {/* 레이더 차트 */}
       <p className="text-[12px] text-gray-500 mb-3">종합 능력치</p>
+      <RadarChart abilities={talent.abilities} />
+
+      {/* B-3. 6대 능력치 바 */}
       <div className="grid grid-cols-2 gap-y-3 gap-x-6 mb-6">
-        {Object.entries(talent.abilities).map(([key, value]) => (
+        {Object.entries(talent.abilities).map(([key, value], i) => (
           <div key={key}>
             <div className="flex justify-between mb-1.5">
               <span className="text-[13px] text-gray-600">
@@ -93,8 +100,11 @@ export function AbilityCard({ talent }: { talent: Talent }) {
             </div>
             <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gray-900 rounded-full"
-                style={{ width: `${value}%` }}
+                className="h-full bg-gray-900 rounded-full animate-bar"
+                style={{
+                  width: `${value}%`,
+                  animationDelay: `${0.3 + i * 0.06}s`,
+                }}
               />
             </div>
           </div>
@@ -104,15 +114,18 @@ export function AbilityCard({ talent }: { talent: Talent }) {
       {/* B-4. 세부 스킬 */}
       <p className="text-[12px] text-gray-500 mb-3">세부 스킬</p>
       <div className="flex flex-col gap-2.5">
-        {talent.detailed_skills.map((skill) => (
+        {talent.detailed_skills.map((skill, i) => (
           <div key={skill.name} className="flex items-center gap-3">
             <span className="text-[13px] text-gray-900 w-[90px] flex-shrink-0">
               {skill.name}
             </span>
             <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full ${skill.type === "core" ? "bg-blue-500" : "bg-gray-500"}`}
-                style={{ width: `${skill.score}%` }}
+                className={`h-full rounded-full animate-bar ${skill.type === "core" ? "bg-blue-500" : "bg-gray-500"}`}
+                style={{
+                  width: `${skill.score}%`,
+                  animationDelay: `${0.5 + i * 0.08}s`,
+                }}
               />
             </div>
             <span className="text-[12px] font-medium text-gray-600 w-7 text-right">

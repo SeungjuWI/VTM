@@ -42,6 +42,11 @@ const config: Config = {
           a: { bg: "#E8F3FF", text: "#3182F6" },
           b: { bg: "#F2F4F6", text: "#6B7684" },
         },
+        // Validation
+        red: {
+          400: "#F87171",
+          500: "#F04452",
+        },
         // Status
         status: {
           available: "#1D9E75",

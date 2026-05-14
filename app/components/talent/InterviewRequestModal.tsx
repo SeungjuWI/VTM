@@ -1,8 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Talent } from "@/lib/types";
-import { getCurrentUser } from "@/lib/dummy-current-user";
+import {
+  getGuestUser,
+  saveGuestUser,
+  validateGuestInput,
+} from "@/lib/guest-user";
 import { saveRequest } from "@/lib/interview-requests";
 import { availabilityKR, formatRoleTitle } from "@/lib/i18n";
 
@@ -16,7 +20,15 @@ export function InterviewRequestModal({
   onSuccess: () => void;
 }) {
   const [message, setMessage] = useState("");
-  const user = getCurrentUser();
+  const savedGuest = getGuestUser();
+  const [isEditing, setIsEditing] = useState(!savedGuest);
+  const [form, setForm] = useState({
+    companyName: savedGuest?.companyName ?? "",
+    contactName: savedGuest?.contactName ?? "",
+    contactEmail: savedGuest?.contactEmail ?? "",
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const firstInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -33,7 +45,41 @@ export function InterviewRequestModal({
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
+  useEffect(() => {
+    if (isEditing) firstInputRef.current?.focus();
+  }, [isEditing]);
+
+  function updateField(field: string, value: string) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  }
+
+  function handleSaveGuest() {
+    const { valid, errors: newErrors } = validateGuestInput(form);
+    if (!valid) {
+      setErrors(newErrors);
+      return;
+    }
+    saveGuestUser(form);
+    setIsEditing(false);
+    setErrors({});
+  }
+
   function handleSubmit() {
+    // 게스트 정보 검증 + 저장
+    const { valid, errors: newErrors } = validateGuestInput(form);
+    if (!valid) {
+      setErrors(newErrors);
+      return;
+    }
+    const guest = saveGuestUser(form);
+
     saveRequest({
       talentId: talent.id,
       talentSnapshot: {
@@ -45,14 +91,21 @@ export function InterviewRequestModal({
         desiredSalaryUsd: talent.desired_salary_usd,
       },
       requesterSnapshot: {
-        companyName: user.companyName,
-        contactName: user.contactName,
-        contactEmail: user.contactEmail,
+        companyName: guest.companyName,
+        contactName: guest.contactName,
+        contactEmail: guest.contactEmail,
       },
       message,
     });
     onSuccess();
   }
+
+  const inputClass = (field: string) =>
+    `w-full px-3.5 py-3 bg-white border-[0.5px] rounded-xl text-[14px] text-gray-900 outline-none transition-colors placeholder:text-gray-400 ${
+      errors[field]
+        ? "border-red-400 focus:border-red-400"
+        : "border-gray-200/60 focus:border-blue-500"
+    }`;
 
   return (
     <div
@@ -63,7 +116,7 @@ export function InterviewRequestModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        className="bg-white rounded-[20px] p-6 w-full max-w-[440px] mx-4"
+        className="bg-white rounded-[20px] p-6 w-full max-w-[440px] mx-4 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 헤더 */}
@@ -115,45 +168,135 @@ export function InterviewRequestModal({
 
         {/* 요청자 정보 */}
         <div className="bg-gray-50 rounded-xl px-4 py-3.5 mb-4">
-          <p className="text-[12px] text-gray-500 mb-2">요청자 정보</p>
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-2">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 14 14"
-                fill="none"
-                stroke="#6B7684"
-                strokeWidth="1.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="1" y="3" width="12" height="10" rx="1.5" />
-                <path d="M1 6h12M5 1v4M9 1v4" />
-              </svg>
-              <span className="text-[14px] text-gray-900">
-                {user.companyName}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 14 14"
-                fill="none"
-                stroke="#6B7684"
-                strokeWidth="1.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="7" cy="4.5" r="2.5" />
-                <path d="M2 13c0-2.76 2.24-5 5-5s5 2.24 5 5" />
-              </svg>
-              <span className="text-[14px] text-gray-900">
-                {user.contactName} · {user.contactEmail}
-              </span>
-            </div>
-          </div>
+          {isEditing ? (
+            <>
+              <p className="text-[12px] text-gray-500 mb-1.5">요청자 정보</p>
+              <p className="text-[11px] text-gray-500 mb-3">
+                한 번 입력하면 다음부터는 자동으로 채워집니다
+              </p>
+              <div className="flex flex-col gap-2.5">
+                <div>
+                  <input
+                    ref={firstInputRef}
+                    type="text"
+                    placeholder="회사명 (예: ABC상사)"
+                    value={form.companyName}
+                    onChange={(e) => updateField("companyName", e.target.value)}
+                    className={inputClass("companyName")}
+                  />
+                  {errors.companyName && (
+                    <p className="text-[11px] text-red-500 mt-1">
+                      {errors.companyName}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <input
+                    type="text"
+                    placeholder="담당자명 (예: 김인사)"
+                    value={form.contactName}
+                    onChange={(e) => updateField("contactName", e.target.value)}
+                    className={inputClass("contactName")}
+                  />
+                  {errors.contactName && (
+                    <p className="text-[11px] text-red-500 mt-1">
+                      {errors.contactName}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <input
+                    type="email"
+                    placeholder="이메일 (예: hr@company.com)"
+                    value={form.contactEmail}
+                    onChange={(e) =>
+                      updateField("contactEmail", e.target.value)
+                    }
+                    className={inputClass("contactEmail")}
+                  />
+                  {errors.contactEmail && (
+                    <p className="text-[11px] text-red-500 mt-1">
+                      {errors.contactEmail}
+                    </p>
+                  )}
+                </div>
+              </div>
+              {savedGuest && (
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => {
+                      setForm({
+                        companyName: savedGuest.companyName,
+                        contactName: savedGuest.contactName,
+                        contactEmail: savedGuest.contactEmail,
+                      });
+                      setIsEditing(false);
+                      setErrors({});
+                    }}
+                    className="flex-1 py-2.5 bg-white border-[0.5px] border-gray-200/60 text-gray-600 rounded-lg text-[13px] font-medium"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={handleSaveGuest}
+                    className="flex-1 py-2.5 bg-blue-500 text-white rounded-lg text-[13px] font-medium"
+                  >
+                    저장
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-[12px] text-gray-500">요청자 정보</span>
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="text-[12px] text-blue-500 font-medium"
+                >
+                  수정
+                </button>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 14 14"
+                    fill="none"
+                    stroke="#6B7684"
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="1" y="3" width="12" height="10" rx="1.5" />
+                    <path d="M1 6h12M5 1v4M9 1v4" />
+                  </svg>
+                  <span className="text-[14px] text-gray-900">
+                    {form.companyName}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 14 14"
+                    fill="none"
+                    stroke="#6B7684"
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="7" cy="4.5" r="2.5" />
+                    <path d="M2 13c0-2.76 2.24-5 5-5s5 2.24 5 5" />
+                  </svg>
+                  <span className="text-[14px] text-gray-900">
+                    {form.contactName} · {form.contactEmail}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* 메시지 */}

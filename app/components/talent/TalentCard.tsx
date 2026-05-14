@@ -37,7 +37,7 @@ function KoreanStars({ level }: { level: number }) {
   );
 }
 
-export function TalentCard({ talent }: { talent: Talent }) {
+export function TalentCard({ talent, photoUrl }: { talent: Talent; photoUrl?: string }) {
   const status = getAvailabilityInfo(talent.availability);
   const isEmployed = talent.availability === "employed";
 
@@ -49,11 +49,15 @@ export function TalentCard({ talent }: { talent: Talent }) {
     >
       {/* 상단: 아바타 + OVR 뱃지 */}
       <div className="flex items-start justify-between mb-3">
-        <div className="w-[42px] h-[42px] rounded-full bg-blue-50 flex items-center justify-center">
-          <span className="text-[13px] font-medium text-blue-500">
-            {talent.initials}
-          </span>
-        </div>
+        {photoUrl ? (
+          <img src={photoUrl} alt="" className="w-[42px] h-[42px] rounded-full object-cover" />
+        ) : (
+          <div className="w-[42px] h-[42px] rounded-full bg-blue-50 flex items-center justify-center">
+            <span className="text-[13px] font-medium text-blue-500">
+              {talent.initials}
+            </span>
+          </div>
+        )}
         <span
           className={`text-[12px] font-medium px-2 py-[3px] rounded-full ${getGradeStyle(talent.ovr_grade)}`}
         >
