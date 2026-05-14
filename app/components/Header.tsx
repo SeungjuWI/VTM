@@ -42,13 +42,14 @@ export function Header() {
   return (
     <header className="bg-white sticky top-0 z-50">
       <div className="mx-auto max-w-[1080px] px-5 h-[56px] flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2">
-            <img src="/logo.png" alt="VTM" width={24} height={24} className="rounded-[4px]" />
-            <span className="text-[18px] text-gray-900 tracking-tight" style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700 }}>
-              Vtm
-            </span>
-          </Link>
+        <Link href="/" className="flex items-center gap-2">
+          <img src="/logo.png" alt="VTM" width={24} height={24} className="rounded-[4px]" />
+          <span className="text-[18px] text-gray-900 tracking-tight" style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700 }}>
+            Vtm
+          </span>
+        </Link>
+
+        <div className="flex items-center gap-5">
           <nav className="hidden sm:flex items-center gap-5">
             <Link href="/talents" className="text-[14px] text-gray-600 hover:text-gray-900 transition-colors">
               인재 열람
@@ -60,18 +61,19 @@ export function Header() {
               Q&A
             </Link>
           </nav>
-        </div>
 
-        {user ? (
+          {user ? (
           <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
               className="flex items-center gap-2"
             >
-              <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                <circle cx="14" cy="11" r="4.5" stroke="#8B95A1" strokeWidth="1.5"/>
-                <path d="M5.5 24c0-4.14 3.82-7.5 8.5-7.5s8.5 3.36 8.5 7.5" stroke="#8B95A1" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
+              <div className="w-8 h-8 rounded-full border-[1.5px] border-gray-300 flex items-center justify-center">
+                <svg width="18" height="18" viewBox="0 0 28 28" fill="none">
+                  <circle cx="14" cy="11" r="4.5" stroke="#8B95A1" strokeWidth="2"/>
+                  <path d="M5.5 24c0-4.14 3.82-7.5 8.5-7.5s8.5 3.36 8.5 7.5" stroke="#8B95A1" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </div>
             </button>
 
             {showMenu && (
@@ -105,6 +107,7 @@ export function Header() {
             로그인
           </Link>
         )}
+        </div>
       </div>
       <div className="h-[0.5px] bg-gray-200/80" />
     </header>
