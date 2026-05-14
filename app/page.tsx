@@ -38,11 +38,11 @@ function WhyVietnam() {
   }, [visible]);
 
   const items = [
-    { num: "50%", desc: "한국 동일 직군 대비 인건비", icon: "💰" },
-    { num: "110만+", desc: "베트남 IT 인력 풀 (매년 5만명 배출)", icon: "👨‍💻" },
-    { num: "2시간", desc: "한국과의 시차 (실시간 협업 가능)", icon: "🕐" },
-    { num: "한국어", desc: "한국어 가능 인재 확보 가능", icon: "🇰🇷" },
-    { num: "근면성실", desc: "높은 업무 몰입도와 성실한 문화", icon: "🔥" },
+    { num: "50% 절감", desc: "한국 대비 인건비 절반", img: "/money.png" },
+    { num: "110만+ 명", desc: "매년 5만명 배출되는 IT 인력", img: "/work.png" },
+    { num: "시차 2시간", desc: "실시간 협업이 가능한 거리", img: "/time.png" },
+    { num: "한국어 가능", desc: "한국어 소통 가능 인재 보유", img: "/korean.png" },
+    { num: "높은 몰입도", desc: "성실하고 끈기 있는 업무 태도", img: "/fire.png" },
   ];
 
   return (
@@ -57,15 +57,17 @@ function WhyVietnam() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-5 max-w-[960px] mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-5 max-w-[1080px] mx-auto">
           {items.map((item, i) => (
             <div
               key={item.num}
-              className={`text-center p-6 rounded-2xl border-[1.5px] border-gray-200 bg-white transition-all duration-500 ${
+              className={`text-center px-5 py-7 rounded-2xl border-[1px] border-gray-200/30 bg-[#F7F8FA] transition-all duration-500 ${
                 showItems[i] ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
               }`}
             >
-              <p className="text-[28px] mb-3">{item.icon}</p>
+              <div className="w-28 h-28 mx-auto mb-3">
+                <img src={item.img} alt={item.num} className="w-full h-full object-contain" />
+              </div>
               <p className="text-[22px] font-[600] text-gray-900 mb-1">{item.num}</p>
               <p className="text-[13px] text-gray-500 leading-snug">{item.desc}</p>
             </div>
@@ -310,7 +312,7 @@ export default function LandingPage() {
   }, [stepsVisible]);
 
   return (
-    <main className="min-h-screen bg-[#F7F8FA]">
+    <main className="min-h-screen bg-white">
       {/* 헤더 */}
       <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50">
         <div className="mx-auto max-w-[1080px] px-5 h-[56px] flex items-center justify-between">
