@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Talent } from "@/lib/types";
+import { supabase } from "@/lib/supabase";
 import { TalentCard } from "@/app/components/talent/TalentCard";
 import { FilterChips } from "@/app/components/talent/FilterChips";
 import { TalentDetailModal } from "@/app/components/talent/TalentDetailModal";
@@ -13,6 +14,25 @@ export default function TalentsContent({ talents }: { talents: Talent[] }) {
   ).length;
 
   const [selected, setSelected] = useState<Talent | null>(null);
+  const [authed, setAuthed] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        window.location.href = "/login";
+      } else {
+        setAuthed(true);
+      }
+    });
+  }, []);
+
+  if (!authed) {
+    return (
+      <main className="min-h-screen bg-[#F7F8FA] flex items-center justify-center">
+        <p className="text-[14px] text-gray-500">로딩 중...</p>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#F7F8FA]">

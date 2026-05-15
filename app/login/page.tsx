@@ -91,16 +91,17 @@ export default function LoginPage() {
           {/* 로그인 안 된 상태 */}
           {!user && (
             <>
-              <div className="text-center mb-8">
-                <h1 className="text-[22px] font-medium text-gray-900 tracking-tight mb-2">
-                  로그인
+              <div className="text-center mb-10">
+                <img src="/logo.png" alt="" width={56} height={56} className="rounded-[8px] mx-auto mb-5" />
+                <h1 className="text-[24px] font-medium text-gray-900 tracking-tight mb-3">
+                  검증된 베트남 IT 인재,<br />지금 바로 확인하세요
                 </h1>
-                <p className="text-[14px] text-gray-500">
-                  기업 담당자 계정으로 로그인하세요
+                <p className="text-[14px] text-gray-500 leading-relaxed">
+                  이력서 분석부터 능력치 평가까지 완료된<br />인재 카드를 열람할 수 있습니다
                 </p>
               </div>
 
-              <div className="bg-white border-[0.5px] border-gray-200/60 rounded-[20px] p-6">
+              <div className="bg-white border-[0.5px] border-gray-200/60 rounded-2xl p-6">
                 <button
                   onClick={handleGoogleLogin}
                   className="w-full py-3.5 bg-white border-[0.5px] border-gray-200 rounded-xl text-[15px] font-medium text-gray-900 hover:bg-gray-50 active:scale-[0.98] transition flex items-center justify-center gap-3"
@@ -113,18 +114,33 @@ export default function LoginPage() {
                   </svg>
                   Google 계정으로 로그인
                 </button>
+                <p className="text-[12px] text-gray-400 text-center mt-4">
+                  기업 담당자 계정으로 로그인해주세요
+                </p>
               </div>
 
-              <div className="bg-white border-[0.5px] border-gray-200/60 rounded-[20px] px-5 py-4 mt-6 text-center">
-                <p className="text-[13px] text-gray-600 mb-2">
-                  아직 계정이 없으신가요?
-                </p>
-                <Link
-                  href="/talents"
-                  className="text-[14px] text-blue-500 font-medium hover:text-blue-600 transition-colors"
-                >
-                  로그인 없이 인재 둘러보기 →
-                </Link>
+              <div className="flex items-center justify-center gap-4 mt-8">
+                <div className="flex items-center gap-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B95A1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+                    <path d="M22 4L12 14.01l-3-3" />
+                  </svg>
+                  <span className="text-[12px] text-gray-500">KTC 검증 인재</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B95A1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+                    <path d="M22 4L12 14.01l-3-3" />
+                  </svg>
+                  <span className="text-[12px] text-gray-500">능력치 카드</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B95A1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+                    <path d="M22 4L12 14.01l-3-3" />
+                  </svg>
+                  <span className="text-[12px] text-gray-500">즉시 채용</span>
+                </div>
               </div>
             </>
           )}
@@ -169,29 +185,21 @@ export default function LoginPage() {
                   <path d="M12 6v6l4 2"/>
                 </svg>
               </div>
-              <h1 className="text-[22px] font-medium text-gray-900 tracking-tight mb-2">
+              <h1 className="text-[22px] font-medium text-gray-900 tracking-tight mb-3">
                 승인 대기 중
               </h1>
               <p className="text-[14px] text-gray-500 mb-1">
                 {profile.email}
               </p>
-              <p className="text-[14px] text-gray-500 mb-6">
-                관리자가 가입을 검토 중입니다. 승인되면 서비스를 이용할 수 있습니다.
+              <p className="text-[14px] text-gray-500 mb-8">
+                관리자가 가입을 검토 중입니다.<br />승인되면 인재 열람이 가능합니다.
               </p>
-              <div className="flex flex-col gap-3">
-                <Link
-                  href="/talents"
-                  className="w-full py-3.5 bg-blue-500 text-white rounded-xl text-[15px] font-medium hover:bg-blue-600 active:scale-[0.98] transition text-center"
-                >
-                  인재 둘러보기
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="text-[13px] text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  로그아웃
-                </button>
-              </div>
+              <button
+                onClick={handleSignOut}
+                className="text-[13px] text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                로그아웃
+              </button>
             </div>
           )}
 
@@ -204,11 +212,11 @@ export default function LoginPage() {
                   <path d="M15 9l-6 6M9 9l6 6"/>
                 </svg>
               </div>
-              <h1 className="text-[22px] font-medium text-gray-900 tracking-tight mb-2">
+              <h1 className="text-[22px] font-medium text-gray-900 tracking-tight mb-3">
                 가입이 승인되지 않았습니다
               </h1>
-              <p className="text-[14px] text-gray-500 mb-6">
-                문의사항이 있으시면 관리자에게 연락해주세요.
+              <p className="text-[14px] text-gray-500 mb-8">
+                문의사항이 있으시면 wsj@likelion.net으로 연락해주세요.
               </p>
               <button
                 onClick={handleSignOut}
@@ -234,7 +242,7 @@ export default function LoginPage() {
               <h1 className="text-[22px] font-medium text-gray-900 tracking-tight mb-1">
                 {profile.name || "사용자"}님, 환영합니다
               </h1>
-              <p className="text-[14px] text-gray-500 mb-6">
+              <p className="text-[14px] text-gray-500 mb-8">
                 {profile.email}
               </p>
               <div className="flex flex-col gap-3">

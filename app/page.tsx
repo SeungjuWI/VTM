@@ -500,13 +500,19 @@ export default function LandingPage() {
       <CtaSection />
 
       {/* 풋터 */}
-      <footer className="border-t-[0.5px] border-gray-200/60 px-5 py-8">
+      <footer className="border-t-[0.5px] border-gray-200/60 px-5 py-10">
         <div className="max-w-[1080px] mx-auto">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-4">
             <img src="/logo.png" alt="VTM" width={20} height={20} className="rounded-[3px]" />
             <span className="text-[14px] text-gray-700" style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700 }}>Vtm</span>
           </div>
-          <p className="text-[12px] text-gray-500">KTC 파트너사 · 베트남 IT 인재 마켓플레이스</p>
+          <div className="text-[12px] text-gray-500 leading-[20px]">
+            <p>상호명: 멋쟁이사자처럼 · 대표: 나성영</p>
+            <p>사업자 번호: 264-88-01106 · 통신판매업 신고번호: 2022-서울종로-1534</p>
+            <p>주소: 서울 종로구 종로3길17, 광화문D타워 D1동 16층, 17층</p>
+            <p>전화번호: 02-6203-3222 · wsj@likelion.net</p>
+          </div>
+          <p className="text-[11px] text-gray-400 mt-4">Copyright © 2022 멋쟁이사자처럼 All rights reserved.</p>
         </div>
       </footer>
 
