@@ -5,7 +5,7 @@ import { Talent, toInitials } from "@/lib/types";
 import { RadarChart } from "./RadarChart";
 import { InterviewRequestModal } from "./InterviewRequestModal";
 import { Toast } from "@/app/components/ui/Toast";
-
+import { isScraped, toggleScrap } from "@/lib/scraps";
 
 const ABILITY_LABELS: Record<string, string> = {
   technical: "실무력",
@@ -40,23 +40,16 @@ export function TalentDetailModal({ talent, onClose }: { talent: Talent; onClose
   const photo = talent.photo_url;
 
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("talent-market:scraps") || "[]");
-    setScrapped(saved.includes(talent.id));
+    setScrapped(isScraped(talent.id));
   }, [talent.id]);
 
   function handleScrap() {
-    const saved: string[] = JSON.parse(localStorage.getItem("talent-market:scraps") || "[]");
-    if (saved.includes(talent.id)) {
-      localStorage.setItem("talent-market:scraps", JSON.stringify(saved.filter((id: string) => id !== talent.id)));
-      setScrapped(false);
-      setToast("스크랩이 해제되었습니다");
-    } else {
-      saved.push(talent.id);
-      localStorage.setItem("talent-market:scraps", JSON.stringify(saved));
-      setScrapped(true);
-      setToast("스크랩되었습니다");
-    }
+    const now = toggleScrap(talent.id);
+    setScrapped(now);
+    setToast(now ? "스크랩되었습니다" : "스크랩이 해제되었습니다");
     setTimeout(() => setToast(""), 2000);
+    // 커스텀 이벤트로 다른 컴포넌트에 변경 알림
+    window.dispatchEvent(new CustomEvent("scrap-change"));
   }
 
   useEffect(() => {

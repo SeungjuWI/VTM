@@ -1,11 +1,24 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { isScraped, toggleScrap } from "@/lib/scraps";
 
 export function DetailNav() {
   const router = useRouter();
-  const [liked, setLiked] = useState(false);
+  const params = useParams();
+  const talentId = params.id as string;
+  const [scrapped, setScrapped] = useState(false);
+
+  useEffect(() => {
+    setScrapped(isScraped(talentId));
+  }, [talentId]);
+
+  function handleScrap() {
+    const now = toggleScrap(talentId);
+    setScrapped(now);
+    window.dispatchEvent(new CustomEvent("scrap-change"));
+  }
 
   return (
     <div className="flex items-center justify-between mb-4">
@@ -16,20 +29,24 @@ export function DetailNav() {
         ← 목록
       </button>
       <div className="flex gap-2">
-        {/* 찜 버튼 */}
+        {/* 스크랩 버튼 */}
         <button
-          onClick={() => setLiked(!liked)}
-          className="w-10 h-10 flex items-center justify-center bg-white border-[0.5px] border-gray-200/60 rounded-xl hover:border-gray-300 active:scale-[0.95] transition-all"
+          onClick={handleScrap}
+          className={`w-10 h-10 flex items-center justify-center border-[0.5px] rounded-xl active:scale-[0.95] transition-all ${
+            scrapped ? "bg-blue-50 border-blue-200" : "bg-white border-gray-200/60 hover:border-gray-300"
+          }`}
         >
           <svg
             width="18"
             height="18"
-            viewBox="0 0 18 18"
-            fill={liked ? "#3182F6" : "none"}
-            stroke={liked ? "#3182F6" : "#6B7684"}
+            viewBox="0 0 20 20"
+            fill={scrapped ? "#3182F6" : "none"}
+            stroke={scrapped ? "#3182F6" : "#6B7684"}
             strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
-            <path d="M9 15.37l-1.36-1.24C3.6 10.48 1 8.2 1 5.5 1 3.22 2.82 1.4 5.1 1.4c1.28 0 2.51.6 3.4 1.54A4.77 4.77 0 0 1 11.9 1.4C14.18 1.4 16 3.22 16 5.5c0 2.7-2.6 4.98-6.64 8.63L9 15.37z" />
+            <path d="M5 3h10a1 1 0 011 1v13.5l-6-3.5-6 3.5V4a1 1 0 011-1z"/>
           </svg>
         </button>
         {/* 공유 버튼 */}

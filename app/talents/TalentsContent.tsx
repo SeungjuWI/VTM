@@ -10,6 +10,7 @@ import { TalentCard } from "@/app/components/talent/TalentCard";
 import { FilterChips } from "@/app/components/talent/FilterChips";
 import { TalentDetailModal } from "@/app/components/talent/TalentDetailModal";
 import { Header } from "@/app/components/Header";
+import { getScrapCount } from "@/lib/scraps";
 
 export default function TalentsContent({ talents }: { talents: Talent[] }) {
   const availableCount = talents.filter(
@@ -19,6 +20,15 @@ export default function TalentsContent({ talents }: { talents: Talent[] }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Talent | null>(null);
   const [authed, setAuthed] = useState<boolean | null>(null);
+  const [scrapCount, setScrapCount] = useState(0);
+
+  // 스크랩 수 동기화
+  useEffect(() => {
+    setScrapCount(getScrapCount());
+    const handler = () => setScrapCount(getScrapCount());
+    window.addEventListener("scrap-change", handler);
+    return () => window.removeEventListener("scrap-change", handler);
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -80,9 +90,20 @@ export default function TalentsContent({ talents }: { talents: Talent[] }) {
         {/* 정렬 헤더 */}
         <div className="flex items-center justify-between mb-3">
           <span className="text-[12px] text-gray-500">{talents.length}명 표시</span>
-          <button className="text-[12px] text-gray-600 hover:text-gray-900 transition-colors">
-            추천순 ▼
-          </button>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/talents/scraps"
+              className="flex items-center gap-1.5 text-[12px] text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 3h10a1 1 0 011 1v13.5l-6-3.5-6 3.5V4a1 1 0 011-1z"/>
+              </svg>
+              스크랩{scrapCount > 0 && ` ${scrapCount}`}
+            </Link>
+            <button className="text-[12px] text-gray-600 hover:text-gray-900 transition-colors">
+              추천순 ▼
+            </button>
+          </div>
         </div>
 
         {/* 카드 그리드 */}
@@ -96,7 +117,10 @@ export default function TalentsContent({ talents }: { talents: Talent[] }) {
       </div>
 
       {selected && (
-        <TalentDetailModal talent={selected} onClose={() => setSelected(null)} />
+        <TalentDetailModal talent={selected} onClose={() => {
+          setSelected(null);
+          setScrapCount(getScrapCount());
+        }} />
       )}
     </main>
   );

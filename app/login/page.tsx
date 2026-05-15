@@ -118,8 +118,8 @@ export default function LoginPage() {
     setRegSubmitting(false);
   }
 
-  // 가입 신청 폼이 필요한지 판별: 로그인 됐고, 프로필은 있지만 company_name이 없는 경우
-  const needsRegistration = user && profile && !profile.company_name;
+  // 가입 신청 폼이 필요한지 판별: 일반 유저만 (admin/super_admin은 제외)
+  const needsRegistration = user && profile && !profile.company_name && profile.role === "user";
 
   if (loading) {
     return (

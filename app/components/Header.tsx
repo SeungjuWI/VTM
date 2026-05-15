@@ -104,6 +104,13 @@ export function Header() {
                   >
                     내 계정
                   </Link>
+                  <Link
+                    href="/talents/scraps"
+                    onClick={() => setShowMenu(false)}
+                    className="block px-4 py-2 text-[14px] text-gray-700 hover:bg-gray-50"
+                  >
+                    스크랩
+                  </Link>
                   {user.isAdmin && (
                     <Link
                       href="/admin"
