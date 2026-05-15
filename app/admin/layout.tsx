@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 const NAV_ITEMS = [
   { href: "/admin", label: "사용자 관리", icon: "users" },
   { href: "/admin/talents", label: "인재 관리", icon: "talents" },
+  { href: "/admin/inquiries", label: "인재 문의", icon: "inquiries" },
   { href: "/admin/roles", label: "권한 안내", icon: "roles" },
 ];
 
@@ -19,6 +20,13 @@ function NavIcon({ type }: { type: string }) {
         <circle cx="9" cy="7" r="4" />
         <path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" />
         <path d="M16 3.13a4 4 0 010 7.75M21 21v-2a4 4 0 00-3-3.85" />
+      </svg>
+    );
+  }
+  if (type === "inquiries") {
+    return (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
       </svg>
     );
   }
