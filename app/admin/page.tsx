@@ -57,11 +57,19 @@ export default function AdminUsersPage() {
     if (status === "approved") {
       const target = users.find((u) => u.id === userId);
       if (target) {
-        fetch("/api/send-approval-email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: target.email, name: target.name }),
-        });
+        try {
+          const res = await fetch("/api/send-approval-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: target.email, name: target.name }),
+          });
+          if (!res.ok) {
+            const err = await res.json();
+            console.error("메일 발송 실패:", err);
+          }
+        } catch (e) {
+          console.error("메일 발송 에러:", e);
+        }
       }
     }
 

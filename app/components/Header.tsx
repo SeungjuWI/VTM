@@ -11,18 +11,24 @@ export function Header() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    async function loadUser(u: { id: string; email?: string; user_metadata: Record<string, string> }) {
-      const profile = await getUserProfile(u.id);
+    function setFromSession(u: { id: string; email?: string; user_metadata: Record<string, string> }) {
       setUser({
         email: u.email,
         avatar: u.user_metadata?.avatar_url || u.user_metadata?.picture,
-        isAdmin: profile?.role === "admin" || profile?.role === "super_admin",
+        isAdmin: false,
+      });
+      setLoaded(true);
+      // admin 여부는 백그라운드로
+      getUserProfile(u.id).then((profile) => {
+        if (profile) {
+          setUser((prev) => prev ? { ...prev, isAdmin: profile.role === "admin" || profile.role === "super_admin" } : prev);
+        }
       });
     }
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        loadUser(session.user).then(() => setLoaded(true));
+        setFromSession(session.user);
       } else {
         setLoaded(true);
       }
@@ -30,7 +36,7 @@ export function Header() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        loadUser(session.user);
+        setFromSession(session.user);
       } else {
         setUser(null);
       }
