@@ -60,14 +60,14 @@ export default function TalentsContent({ talents }: { talents: Talent[] }) {
             </p>
             <Link
               href="/talents/criteria"
-              className="inline-flex items-center gap-1 text-[12px] text-gray-500 hover:text-gray-700 transition-colors border-[0.5px] border-gray-200 rounded-full px-2.5 py-1"
+              className="inline-flex items-center gap-1.5 text-[12px] text-[#3182F6] font-medium hover:bg-[#E8F3FF] bg-[#E8F3FF]/60 transition-colors rounded-full px-3 py-1.5"
             >
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                 <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.2"/>
                 <path d="M8 7V11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
                 <circle cx="8" cy="5.5" r="0.75" fill="currentColor"/>
               </svg>
-              평가기준
+              평가기준 보기
             </Link>
           </div>
         </div>

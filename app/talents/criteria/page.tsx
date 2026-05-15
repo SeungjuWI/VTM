@@ -9,16 +9,6 @@ import { Header } from "@/app/components/Header";
 
 const TOTAL_STEPS = 7;
 
-const STEP_LABELS = [
-  "개요",
-  "R1 필수요건",
-  "R1 배점",
-  "R1 연차별 상세",
-  "R2 AI 스크리닝",
-  "R3 전화 인터뷰",
-  "공통 유의사항",
-];
-
 export default function CriteriaPage() {
   const router = useRouter();
   const [authed, setAuthed] = useState<boolean | null>(null);
