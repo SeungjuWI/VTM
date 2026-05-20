@@ -67,5 +67,16 @@ export async function POST(req: NextRequest) {
     })
     .eq("id", session.id);
 
+  // 연결된 후보자 상태를 ai_interview_done으로 업데이트
+  if (session.candidate_id) {
+    await supabase
+      .from("candidates")
+      .update({
+        pipeline_status: "ai_interview_done",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", session.candidate_id);
+  }
+
   return NextResponse.json({ success: true, totalScore, maxScore });
 }
