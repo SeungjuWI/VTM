@@ -13,6 +13,7 @@ function getSupportedMimeType(): string {
 export default function IntroPage({ params }: { params: { code: string } }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [appliedCompany, setAppliedCompany] = useState("");
   const [phone, setPhone] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -136,6 +137,9 @@ export default function IntroPage({ params }: { params: { code: string } }) {
     setError("");
 
     if (!name.trim()) { setError("Please enter your full name."); return; }
+    if (!email.trim()) { setError("Please enter your email."); return; }
+    if (!appliedCompany.trim()) { setError("Please enter the company you applied to."); return; }
+    if (!phone.trim()) { setError("Please enter your phone number."); return; }
     if (!agreed) { setError("Please agree to the terms."); return; }
     if (!allTestsPassed) { setError("Please complete both audio tests first."); return; }
 
@@ -149,6 +153,7 @@ export default function IntroPage({ params }: { params: { code: string } }) {
           code: params.code,
           name: name.trim(),
           email: email.trim(),
+          appliedCompany: appliedCompany.trim(),
           phone: phone.trim(),
         }),
       });
@@ -298,14 +303,25 @@ export default function IntroPage({ params }: { params: { code: string } }) {
               className="w-full px-3 py-2 border-[0.5px] border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-[14px]" required />
           </div>
           <div>
-            <label className="block text-[13px] font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-[13px] font-medium text-gray-700 mb-1">
+              Email <span className="text-red-500">*</span>
+            </label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border-[0.5px] border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-[14px]" />
+              className="w-full px-3 py-2 border-[0.5px] border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-[14px]" required />
           </div>
           <div>
-            <label className="block text-[13px] font-medium text-gray-700 mb-1">Phone / So dien thoai</label>
+            <label className="block text-[13px] font-medium text-gray-700 mb-1">
+              Applied Company / Cong ty ung tuyen <span className="text-red-500">*</span>
+            </label>
+            <input type="text" value={appliedCompany} onChange={(e) => setAppliedCompany(e.target.value)}
+              className="w-full px-3 py-2 border-[0.5px] border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-[14px]" required />
+          </div>
+          <div>
+            <label className="block text-[13px] font-medium text-gray-700 mb-1">
+              Phone / So dien thoai <span className="text-red-500">*</span>
+            </label>
             <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
-              className="w-full px-3 py-2 border-[0.5px] border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-[14px]" />
+              className="w-full px-3 py-2 border-[0.5px] border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-[14px]" required />
           </div>
 
           <label className="flex items-start gap-2 cursor-pointer">

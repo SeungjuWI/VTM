@@ -49,7 +49,7 @@ export default function InterviewDetailPage({ params }: { params: { id: string }
 
       <div className="bg-white rounded-2xl border-[0.5px] border-gray-200/60 p-6 mb-6">
         <h1 className="text-[22px] font-medium text-gray-900">{session.candidate_name}</h1>
-        <p className="text-[13px] text-gray-500">{session.candidate_email} · {session.candidate_phone}</p>
+        <p className="text-[13px] text-gray-500">{session.candidate_email} · {session.candidate_phone}{session.applied_company && ` · ${session.applied_company}`}</p>
         <p className="text-[12px] font-mono text-gray-400 mt-1">{session.access_code}</p>
 
         <div className="mt-4 p-4 bg-blue-50 rounded-xl">

@@ -10,7 +10,7 @@ function getSupabaseAdmin() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { code, name, email, phone } = body;
+  const { code, name, email, phone, appliedCompany } = body;
   if (!code || !name) {
     return NextResponse.json({ success: false, message: "Missing fields" }, { status: 400 });
   }
@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
       candidate_name: name,
       candidate_email: email || null,
       candidate_phone: phone || null,
+      applied_company: appliedCompany || null,
       status: "in_progress",
       started_at: new Date().toISOString(),
       user_agent: userAgent,
