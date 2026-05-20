@@ -22,6 +22,7 @@ const translations: Record<string, Record<AdminLang, string>> = {
   "nav.pool": { ko: "인재풀 등록", en: "Talent Pool", vi: "Đăng ký nhân tài" },
   "nav.roles": { ko: "권한 안내", en: "Permissions", vi: "Phân quyền" },
   "nav.interviews": { ko: "AI 인터뷰", en: "AI Interviews", vi: "Phỏng vấn AI" },
+  "nav.jd": { ko: "JD 관리", en: "JD Management", vi: "Quản lý JD" },
 
   // AI 인터뷰
   "interviews.issueCodes": { ko: "코드 발급", en: "Issue Codes", vi: "Phát mã" },
@@ -45,7 +46,8 @@ const translations: Record<string, Record<AdminLang, string>> = {
   "candidates.stat.finalPassed": { ko: "최종 합격", en: "Final Passed", vi: "Đạt" },
   "candidates.stat.screeningFailed": { ko: "스크리닝 실패", en: "Screening Failed", vi: "Sàng lọc thất bại" },
   "candidates.stat.rejected": { ko: "불합격", en: "Rejected", vi: "Không đạt" },
-  "candidates.allJobs": { ko: "전체 직군", en: "All Jobs", vi: "Tất cả vị trí" },
+  "candidates.allPositions": { ko: "전체 직군", en: "All Positions", vi: "Tất cả vị trí" },
+  "candidates.allJobs": { ko: "전체 포지션", en: "All Jobs", vi: "Tất cả công việc" },
   "candidates.allSources": { ko: "전체 소스", en: "All Sources", vi: "Tất cả nguồn" },
   "candidates.noData": { ko: "시트 동기화를 실행하여 후보자를 불러오세요.", en: "Sync sheets to load candidates.", vi: "Đồng bộ sheet để tải ứng viên." },
   "candidates.noMatch": { ko: "해당 조건의 후보자가 없습니다.", en: "No candidates match this filter.", vi: "Không có ứng viên phù hợp." },

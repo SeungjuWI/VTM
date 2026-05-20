@@ -33,7 +33,7 @@ export async function POST() {
   let removed = 0;
   const details: { name: string; kept: string; removed: string[] }[] = [];
 
-  for (const [, group] of groups) {
+  for (const [, group] of Array.from(groups)) {
     if (group.length <= 1) continue;
 
     // 가장 높은 점수의 카드 유지, 동점이면 최신

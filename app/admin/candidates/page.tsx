@@ -86,6 +86,7 @@ export default function CandidatesPage() {
   const [activeTab, setActiveTab] = useState<string>("pending");
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [sourceFilter, setSourceFilter] = useState<string>("all");
+  const [positionFilter, setPositionFilter] = useState<string>("all");
   const [jobFilter, setJobFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState(false);
@@ -95,8 +96,11 @@ export default function CandidatesPage() {
   const [sendingAll, setSendingAll] = useState(false);
 
   const fetchCandidates = useCallback(async () => {
-    const { data } = await supabase.from("candidates").select("*").order("created_at", { ascending: false });
-    if (data) setCandidates(data);
+    try {
+      const res = await fetch("/api/admin/candidates");
+      const data = await res.json();
+      if (Array.isArray(data)) setCandidates(data);
+    } catch { /* ignore */ }
     setLoading(false);
   }, []);
 
@@ -167,10 +171,12 @@ export default function CandidatesPage() {
 
   const tabGroup = TAB_KEYS.find((tab) => tab.key === activeTab)!;
   const sources = Array.from(new Set(candidates.map((c) => c.source)));
+  const positions = Array.from(new Set(candidates.map((c) => c.position).filter(Boolean))) as string[];
   const jobCodes = Array.from(new Set(candidates.map((c) => c.applied_job?.match(/^([A-Z]+\d+)/)?.[1]).filter(Boolean))) as string[];
   const filtered = candidates
     .filter((c) => tabGroup.statuses.includes(c.pipeline_status as never))
     .filter((c) => sourceFilter === "all" || c.source === sourceFilter)
+    .filter((c) => positionFilter === "all" || c.position === positionFilter)
     .filter((c) => jobFilter === "all" || (c.applied_job || "").startsWith(jobFilter))
     .filter((c) => !search || c.full_name.toLowerCase().includes(search.toLowerCase()));
 
@@ -262,30 +268,37 @@ export default function CandidatesPage() {
         ))}
       </div>
 
-      <div className="flex gap-1.5 mb-3 flex-wrap">
-        <button onClick={() => setJobFilter("all")}
-          className={`px-2.5 py-1 rounded-full text-[12px] transition-colors ${jobFilter === "all" ? "bg-[#3182F6] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
-          {t("candidates.allJobs")}
-        </button>
-        {jobCodes.map((code) => (
-          <button key={code} onClick={() => setJobFilter(code)}
-            className={`px-2.5 py-1 rounded-full text-[12px] transition-colors ${jobFilter === code ? "bg-[#3182F6] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
-            {code}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex gap-1.5 mb-4 flex-wrap">
-        <button onClick={() => setSourceFilter("all")}
-          className={`px-2.5 py-1 rounded-full text-[12px] transition-colors ${sourceFilter === "all" ? "bg-gray-700 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
-          {t("candidates.allSources")}
-        </button>
-        {sources.map((src) => (
-          <button key={src} onClick={() => setSourceFilter(src)}
-            className={`px-2.5 py-1 rounded-full text-[12px] transition-colors ${sourceFilter === src ? "bg-gray-700 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
-            {src}
-          </button>
-        ))}
+      <div className="flex gap-2 mb-4">
+        <select
+          value={positionFilter}
+          onChange={(e) => setPositionFilter(e.target.value)}
+          className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-[13px] text-gray-700 focus:outline-none focus:border-gray-300 cursor-pointer"
+        >
+          <option value="all">{t("candidates.allPositions")}</option>
+          {positions.map((pos) => (
+            <option key={pos} value={pos}>{pos}</option>
+          ))}
+        </select>
+        <select
+          value={jobFilter}
+          onChange={(e) => setJobFilter(e.target.value)}
+          className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-[13px] text-gray-700 focus:outline-none focus:border-gray-300 cursor-pointer"
+        >
+          <option value="all">{t("candidates.allJobs")}</option>
+          {jobCodes.map((code) => (
+            <option key={code} value={code}>{code}</option>
+          ))}
+        </select>
+        <select
+          value={sourceFilter}
+          onChange={(e) => setSourceFilter(e.target.value)}
+          className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-[13px] text-gray-700 focus:outline-none focus:border-gray-300 cursor-pointer"
+        >
+          <option value="all">{t("candidates.allSources")}</option>
+          {sources.map((src) => (
+            <option key={src} value={src}>{src}</option>
+          ))}
+        </select>
       </div>
 
       {activeTab === "ai_passed" && filtered.length > 0 && (
