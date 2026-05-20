@@ -22,6 +22,7 @@ interface Candidate {
   applied_company: string | null;
   pipeline_status: string;
   phone_interview_note: string | null;
+  interview_session_id: string | null;
   rejection_reason: string | null;
   llm_score: number | null;
   llm_summary: string | null;
@@ -32,8 +33,8 @@ interface Candidate {
 const TAB_KEYS = [
   { key: "pending", labelKey: "candidates.tab.pending", statuses: ["new"] },
   { key: "ai_passed", labelKey: "candidates.tab.aiPassed", statuses: ["passed"] },
-  { key: "phone_pending", labelKey: "candidates.tab.phonePending", statuses: ["phone_interview_pending"] },
-  { key: "phone_done", labelKey: "candidates.tab.phoneDone", statuses: ["phone_interview_done"] },
+  { key: "ai_interview_sent", labelKey: "candidates.tab.aiInterviewSent", statuses: ["ai_interview_sent"] },
+  { key: "ai_interview_done", labelKey: "candidates.tab.aiInterviewDone", statuses: ["ai_interview_done"] },
   { key: "final_passed", labelKey: "candidates.tab.finalPassed", statuses: ["final_passed"] },
   { key: "screening_failed", labelKey: "candidates.tab.screeningFailed", statuses: ["screening_failed"] },
   { key: "rejected", labelKey: "candidates.tab.rejected", statuses: ["rejected"] },
@@ -42,8 +43,8 @@ const TAB_KEYS = [
 const STATUS_COLORS: Record<string, string> = {
   new: "#8B95A1",
   passed: "#3182F6",
-  phone_interview_pending: "#E8590C",
-  phone_interview_done: "#6B7684",
+  ai_interview_sent: "#E8590C",
+  ai_interview_done: "#6B7684",
   final_passed: "#1D9E75",
   rejected: "#B0B8C1",
   screening_failed: "#B0B8C1",
@@ -91,6 +92,7 @@ export default function CandidatesPage() {
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState("");
   const [result, setResult] = useState<string | null>(null);
+  const [sendingAll, setSendingAll] = useState(false);
 
   const fetchCandidates = useCallback(async () => {
     const { data } = await supabase.from("candidates").select("*").order("created_at", { ascending: false });
@@ -138,6 +140,28 @@ export default function CandidatesPage() {
     setBusy(false); setProgress(0); setMessage("");
   };
 
+  const sendAllInterviews = async () => {
+    const targets = filtered.filter((c) => c.email);
+    if (targets.length === 0) return;
+    if (!confirm(`${targets.length}명에게 AI 인터뷰 코드를 발송합니다. 진행할까요?`)) return;
+
+    setSendingAll(true);
+    setResult(null);
+    try {
+      const res = await fetch("/api/admin/send-interview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ candidateIds: targets.map((c) => c.id) }),
+      });
+      const json = await res.json();
+      setResult(`AI 인터뷰 발송 — 성공: ${json.sent} / 실패: ${json.failed} / 전체: ${json.total}`);
+      fetchCandidates();
+    } catch {
+      setResult("AI 인터뷰 발송 실패");
+    }
+    setSendingAll(false);
+  };
+
   const tabGroup = TAB_KEYS.find((tab) => tab.key === activeTab)!;
   const sources = Array.from(new Set(candidates.map((c) => c.source)));
   const jobCodes = Array.from(new Set(candidates.map((c) => c.applied_job?.match(/^([A-Z]+\d+)/)?.[1]).filter(Boolean))) as string[];
@@ -150,8 +174,8 @@ export default function CandidatesPage() {
   const counts = {
     pending: candidates.filter((c) => c.pipeline_status === "new").length,
     ai_passed: candidates.filter((c) => c.pipeline_status === "passed").length,
-    phone_pending: candidates.filter((c) => c.pipeline_status === "phone_interview_pending").length,
-    phone_done: candidates.filter((c) => c.pipeline_status === "phone_interview_done").length,
+    ai_interview_sent: candidates.filter((c) => c.pipeline_status === "ai_interview_sent").length,
+    ai_interview_done: candidates.filter((c) => c.pipeline_status === "ai_interview_done").length,
     final_passed: candidates.filter((c) => c.pipeline_status === "final_passed").length,
     screening_failed: candidates.filter((c) => c.pipeline_status === "screening_failed").length,
     rejected: candidates.filter((c) => c.pipeline_status === "rejected").length,
@@ -160,8 +184,8 @@ export default function CandidatesPage() {
   const STAT_KEYS: { key: keyof typeof counts; labelKey: string; color: string }[] = [
     { key: "pending", labelKey: "candidates.stat.pending", color: "#191F28" },
     { key: "ai_passed", labelKey: "candidates.stat.aiPassed", color: "#3182F6" },
-    { key: "phone_pending", labelKey: "candidates.stat.phonePending", color: "#E8590C" },
-    { key: "phone_done", labelKey: "candidates.stat.phoneDone", color: "#6B7684" },
+    { key: "ai_interview_sent", labelKey: "candidates.stat.aiInterviewSent", color: "#E8590C" },
+    { key: "ai_interview_done", labelKey: "candidates.stat.aiInterviewDone", color: "#6B7684" },
     { key: "final_passed", labelKey: "candidates.stat.finalPassed", color: "#1D9E75" },
     { key: "screening_failed", labelKey: "candidates.stat.screeningFailed", color: "#B0B8C1" },
     { key: "rejected", labelKey: "candidates.stat.rejected", color: "#B0B8C1" },
@@ -261,6 +285,18 @@ export default function CandidatesPage() {
         ))}
       </div>
 
+      {activeTab === "ai_passed" && filtered.length > 0 && (
+        <div className="mb-3 flex items-center justify-between bg-blue-50 border border-blue-500/20 rounded-xl px-4 py-3">
+          <span className="text-[13px] text-blue-600">
+            {filtered.filter((c) => c.email).length}명에게 AI 인터뷰 코드를 일괄 발송할 수 있습니다
+          </span>
+          <button onClick={sendAllInterviews} disabled={sendingAll || busy}
+            className="px-4 py-2 bg-[#3182F6] text-white text-[13px] rounded-xl hover:bg-[#2272EB] transition-colors disabled:opacity-50">
+            {sendingAll ? "발송 중..." : `전체 발송 (${filtered.filter((c) => c.email).length}명)`}
+          </button>
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl border border-gray-200/60 overflow-hidden">
         {filtered.length === 0 ? (
           <div className="py-16 text-center text-[14px] text-gray-500">
@@ -316,10 +352,11 @@ export default function CandidatesPage() {
 function CandidateDetailModal({ candidate: initCandidate, onClose }: { candidate: Candidate; onClose: () => void }) {
   const { t, lang } = useAdminI18n();
   const [c, setC] = useState(initCandidate);
-  const [phoneNote, setPhoneNote] = useState(c.phone_interview_note || "");
-  const [phoneDate, setPhoneDate] = useState("");
-  const [phoneTime, setPhoneTime] = useState("");
+  const [memo, setMemo] = useState(c.phone_interview_note || "");
   const [saving, setSaving] = useState(false);
+  const [sendingInterview, setSendingInterview] = useState(false);
+  const [interviewSession, setInterviewSession] = useState<{ id: string; access_code: string; status: string; total_score: number | null } | null>(null);
+  const [loadingSession, setLoadingSession] = useState(false);
   const summary = c.llm_summary ? JSON.parse(c.llm_summary) : null;
 
   // 언어별 데이터 선택
@@ -335,8 +372,40 @@ function CandidateDetailModal({ candidate: initCandidate, onClose }: { candidate
     setSaving(false);
   };
 
-  const savePhoneNote = async () => {
-    await supabase.from("candidates").update({ phone_interview_note: phoneNote, updated_at: new Date().toISOString() }).eq("id", c.id);
+  const saveMemo = async () => {
+    await supabase.from("candidates").update({ phone_interview_note: memo, updated_at: new Date().toISOString() }).eq("id", c.id);
+  };
+
+  // AI 인터뷰 세션 조회
+  useEffect(() => {
+    if (["ai_interview_sent", "ai_interview_done", "final_passed"].includes(c.pipeline_status)) {
+      setLoadingSession(true);
+      fetch(`/api/admin/interviews?candidateId=${c.id}`)
+        .then((r) => r.json())
+        .then((json) => {
+          const session = json.sessions?.find((s: { candidate_id: string }) => s.candidate_id === c.id);
+          if (session) setInterviewSession(session);
+        })
+        .finally(() => setLoadingSession(false));
+    }
+  }, [c.id, c.pipeline_status]);
+
+  const sendAiInterview = async () => {
+    if (!c.email) return;
+    setSendingInterview(true);
+    try {
+      const res = await fetch("/api/admin/send-interview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ candidateIds: [c.id] }),
+      });
+      const json = await res.json();
+      if (json.success && json.results?.[0]?.sent) {
+        setC((prev) => ({ ...prev, pipeline_status: "ai_interview_sent" } as Candidate));
+      }
+    } finally {
+      setSendingInterview(false);
+    }
   };
 
   return (
@@ -472,59 +541,90 @@ function CandidateDetailModal({ candidate: initCandidate, onClose }: { candidate
             )}
           </div>
 
-          {["phone_interview_pending", "phone_interview_done", "final_passed"].includes(c.pipeline_status) && (
-            <div>
-              <p className="text-[11px] text-gray-500 mb-2">{t("phone.memo")}</p>
-              <textarea value={phoneNote} onChange={(e) => setPhoneNote(e.target.value)} onBlur={savePhoneNote}
-                placeholder={t("phone.memoPlaceholder")}
-                className="w-full h-24 px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-gray-900 placeholder:text-gray-400 resize-none focus:outline-none focus:border-gray-300" />
-            </div>
+          {["ai_interview_sent", "ai_interview_done", "final_passed"].includes(c.pipeline_status) && (
+            <>
+              {/* AI 인터뷰 상태 */}
+              <div>
+                <p className="text-[11px] text-gray-500 mb-2">{t("aiInterview.status")}</p>
+                {loadingSession ? (
+                  <p className="text-[13px] text-gray-400">Loading...</p>
+                ) : interviewSession ? (
+                  <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[12px] text-gray-500">Code</span>
+                      <span className="text-[13px] font-mono text-gray-700">{interviewSession.access_code}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[12px] text-gray-500">Status</span>
+                      <span className={`text-[12px] px-2 py-0.5 rounded-full ${
+                        interviewSession.status === "scored" ? "bg-[#1D9E75]/10 text-[#1D9E75]" :
+                        interviewSession.status === "completed" ? "bg-blue-50 text-blue-500" :
+                        interviewSession.status === "in_progress" ? "bg-[#FFF8F0] text-[#E8590C]" :
+                        "bg-gray-100 text-gray-600"
+                      }`}>
+                        {t(`aiInterview.${interviewSession.status === "pending" ? "notStarted" : interviewSession.status === "in_progress" ? "inProgress" : interviewSession.status === "completed" ? "completed" : "scored"}`)}
+                      </span>
+                    </div>
+                    {interviewSession.total_score !== null && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-[12px] text-gray-500">Score</span>
+                        <span className="text-[14px] font-medium text-gray-900">{interviewSession.total_score}/70 ({Math.round(interviewSession.total_score / 70 * 100)}%)</span>
+                      </div>
+                    )}
+                    {["scored", "completed"].includes(interviewSession.status) && (
+                      <a href={`/admin/interviews/${interviewSession.id}`} target="_blank" rel="noopener noreferrer"
+                        className="block text-center py-2 bg-blue-50 text-blue-500 rounded-lg text-[13px] hover:bg-blue-100 transition-colors mt-2">
+                        {t("aiInterview.viewResult")}
+                      </a>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-[13px] text-gray-400">{t("aiInterview.notStarted")}</p>
+                )}
+              </div>
+
+              {/* 메모 */}
+              <div>
+                <p className="text-[11px] text-gray-500 mb-2">{t("aiInterview.memo")}</p>
+                <textarea value={memo} onChange={(e) => setMemo(e.target.value)} onBlur={saveMemo}
+                  placeholder={t("aiInterview.memoPlaceholder")}
+                  className="w-full h-24 px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-gray-900 placeholder:text-gray-400 resize-none focus:outline-none focus:border-gray-300" />
+              </div>
+            </>
           )}
 
           <div className="space-y-3 pt-2">
+            {/* AI 합격 → AI 인터뷰 발송 */}
             {c.pipeline_status === "passed" && (
               <div className="space-y-2">
-                <p className="text-[11px] text-gray-500">{t("phone.schedule")}</p>
-                <div className="flex gap-2">
-                  <input type="date" value={phoneDate} onChange={(e) => setPhoneDate(e.target.value)}
-                    className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-gray-900 focus:outline-none focus:border-gray-300" />
-                  <input type="text" value={phoneTime} maxLength={5}
-                    onChange={(e) => { let v = e.target.value.replace(/[^0-9]/g, ""); if (v.length > 4) v = v.slice(0, 4); if (v.length >= 3) v = v.slice(0, 2) + ":" + v.slice(2); setPhoneTime(v); }}
-                    placeholder="14:00"
-                    className="w-[80px] px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-gray-900 focus:outline-none focus:border-gray-300 text-center" />
-                </div>
-                <button onClick={() => updateStatus("phone_interview_pending", { phone_interview_date: phoneDate && phoneTime ? `${phoneDate}T${phoneTime}` : phoneDate || null })}
-                  disabled={saving || !phoneDate || phoneTime.length < 5}
+                <button onClick={sendAiInterview}
+                  disabled={sendingInterview || !c.email}
                   className="w-full py-3 bg-[#3182F6] text-white text-[14px] rounded-xl hover:bg-[#2272EB] transition-colors disabled:opacity-50">
-                  {t("phone.moveToPending")}
+                  {sendingInterview ? t("aiInterview.sending") : t("aiInterview.send")}
                 </button>
+                {!c.email && <p className="text-[12px] text-red-500 text-center">Email not available</p>}
               </div>
             )}
 
-            {c.pipeline_status === "phone_interview_pending" && (
-              <button onClick={() => updateStatus("phone_interview_done")} disabled={saving}
-                className="w-full py-3 bg-[#3182F6] text-white text-[14px] rounded-xl hover:bg-[#2272EB] transition-colors disabled:opacity-50">
-                {t("phone.markDone")}
-              </button>
-            )}
-
-            {c.pipeline_status === "phone_interview_done" && (
+            {/* AI 인터뷰 완료 → 최종 합격/불합격 */}
+            {c.pipeline_status === "ai_interview_done" && (
               <div className="flex gap-2">
                 <button onClick={() => updateStatus("final_passed")} disabled={saving}
                   className="flex-1 py-3 bg-[#3182F6] text-white text-[14px] rounded-xl hover:bg-[#2272EB] transition-colors disabled:opacity-50">
-                  {t("phone.finalPass")}
+                  {t("aiInterview.finalPass")}
                 </button>
-                <button onClick={() => updateStatus("rejected", { rejection_reason: "Phone interview rejected" })} disabled={saving}
+                <button onClick={() => updateStatus("rejected", { rejection_reason: "AI interview rejected" })} disabled={saving}
                   className="flex-1 py-3 bg-white border border-gray-200 text-gray-700 text-[14px] rounded-xl hover:border-gray-300 transition-colors disabled:opacity-50">
-                  {t("phone.reject")}
+                  {t("aiInterview.reject")}
                 </button>
               </div>
             )}
 
-            {["passed", "phone_interview_pending"].includes(c.pipeline_status) && (
+            {/* 불합격 처리 (합격/발송 상태에서) */}
+            {["passed", "ai_interview_sent"].includes(c.pipeline_status) && (
               <button onClick={() => updateStatus("rejected", { rejection_reason: "Manually rejected" })} disabled={saving}
                 className="w-full py-2.5 text-[13px] text-gray-500 hover:text-gray-700 transition-colors">
-                {t("phone.rejectAction")}
+                {t("aiInterview.rejectAction")}
               </button>
             )}
           </div>

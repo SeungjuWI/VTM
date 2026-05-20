@@ -9,6 +9,7 @@ interface Session {
   access_code: string;
   candidate_name: string;
   candidate_email: string;
+  applied_company: string | null;
   status: string;
   total_score: number | null;
   human_decision: string | null;
@@ -92,6 +93,7 @@ export default function InterviewsAdminPage() {
               <tr>
                 <th className="px-4 py-3 text-left text-gray-500 font-medium">Code</th>
                 <th className="px-4 py-3 text-left text-gray-500 font-medium">Name</th>
+                <th className="px-4 py-3 text-left text-gray-500 font-medium">Company</th>
                 <th className="px-4 py-3 text-left text-gray-500 font-medium">Status</th>
                 <th className="px-4 py-3 text-left text-gray-500 font-medium">Score</th>
                 <th className="px-4 py-3 text-left text-gray-500 font-medium">Decision</th>
@@ -108,6 +110,9 @@ export default function InterviewsAdminPage() {
                         {s.candidate_name}
                       </Link>
                     ) : (s.candidate_name || <span className="text-gray-400">—</span>)}
+                  </td>
+                  <td className="px-4 py-3 text-[12px] text-gray-600">
+                    {s.applied_company || <span className="text-gray-400">—</span>}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`text-[12px] px-2 py-1 rounded-full ${statusBadge(s.status)}`}>{statusLabel(s)}</span>
@@ -128,7 +133,7 @@ export default function InterviewsAdminPage() {
               ))}
               {sessions.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
+                  <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
                     No interview sessions yet. Issue codes to get started.
                   </td>
                 </tr>

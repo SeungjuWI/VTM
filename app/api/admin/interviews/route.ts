@@ -9,12 +9,15 @@ function getSupabaseAdmin() {
 }
 
 // 세션 리스트 (각 세션의 답변 수 포함)
-export async function GET() {
+export async function GET(req: NextRequest) {
   const supabase = getSupabaseAdmin();
-  const { data: sessions } = await supabase
-    .from("interview_sessions")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const candidateId = req.nextUrl.searchParams.get("candidateId");
+
+  let query = supabase.from("interview_sessions").select("*").order("created_at", { ascending: false });
+  if (candidateId) {
+    query = query.eq("candidate_id", candidateId);
+  }
+  const { data: sessions } = await query;
 
   // 답변 수 조회 (in_progress, abandoned 세션용)
   const sessionsWithCount = await Promise.all(
