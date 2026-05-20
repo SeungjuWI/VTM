@@ -1,4 +1,18 @@
+"use client";
+
+import { useEffect } from "react";
+
 export default function CompletePage() {
+  // 뒤로가기 차단
+  useEffect(() => {
+    const block = () => {
+      window.history.pushState(null, "", window.location.href);
+    };
+    block();
+    window.addEventListener("popstate", block);
+    return () => window.removeEventListener("popstate", block);
+  }, []);
+
   return (
     <div className="min-h-[calc(100vh-57px)] flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl border-[0.5px] border-gray-200/60 p-12 text-center max-w-md">

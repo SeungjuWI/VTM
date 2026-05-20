@@ -46,6 +46,29 @@ function playBeep() {
   }
 }
 
+// AudioContext로 TTS 재생 (autoplay 정책 우회)
+async function playTtsViaContext(url: string): Promise<void> {
+  try {
+    const res = await fetch(url);
+    const arrayBuf = await res.arrayBuffer();
+    const ctx = new AudioContext();
+    const audioBuf = await ctx.decodeAudioData(arrayBuf);
+    const source = ctx.createBufferSource();
+    source.buffer = audioBuf;
+    source.connect(ctx.destination);
+
+    return new Promise((resolve) => {
+      source.onended = () => {
+        ctx.close();
+        resolve();
+      };
+      source.start();
+    });
+  } catch (err) {
+    console.warn("TTS playback failed:", err);
+  }
+}
+
 export default function Recorder({
   ttsAudioUrl,
   maxDurationSeconds,
@@ -58,8 +81,6 @@ export default function Recorder({
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
   const mimeTypeRef = useRef<string>(getSupportedMimeType());
   const startedRef = useRef(false);
 
@@ -71,19 +92,12 @@ export default function Recorder({
   }, []);
 
   const startRecording = useCallback(async () => {
-    // 매번 새 stream 획득 (이전 질문에서 사용한 stream 문제 방지)
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
     } catch {
       console.error("Failed to get mic stream for recording");
       return;
-    }
-
-    // 녹음 시작 시 아바타 영상 첫 프레임으로 정지
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
     }
 
     playBeep();
@@ -104,7 +118,6 @@ export default function Recorder({
     };
 
     recorder.onstop = async () => {
-      // stream 해제
       streamRef.current?.getTracks().forEach((t) => t.stop());
       const blob = new Blob(chunksRef.current, { type: mimeTypeRef.current });
       setPhase("uploading");
@@ -133,56 +146,29 @@ export default function Recorder({
     }, 1000);
   }, [maxDurationSeconds, onComplete, stopRecording]);
 
-  // 마운트 시 TTS 자동재생 → 끝나면 녹음 시작
+  // 마운트 시 TTS 재생(AudioContext) → 끝나면 녹음 시작
   useEffect(() => {
     if (startedRef.current) return;
     startedRef.current = true;
 
-    const audio = new Audio(ttsAudioUrl);
-    audioRef.current = audio;
-
-    const onTtsEnd = () => {
+    (async () => {
+      if (ttsAudioUrl) {
+        await playTtsViaContext(ttsAudioUrl);
+      }
       setTimeout(() => startRecording(), 300);
-    };
-
-    audio.onended = onTtsEnd;
-    audio.onerror = () => {
-      console.warn("TTS playback failed");
-      onTtsEnd();
-    };
-
-    audio.play().catch(() => {
-      console.warn("Audio autoplay blocked");
-      onTtsEnd();
-    });
+    })();
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      audioRef.current?.pause();
       streamRef.current?.getTracks().forEach((t) => t.stop());
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const avatarVideo = (
-    <video
-      ref={videoRef}
-      src="/interview-avatar.mp4"
-      muted
-      playsInline
-      loop={phase === "playing-tts"}
-      autoPlay={phase === "playing-tts"}
-      className="w-[120px] h-[150px] object-cover rounded-xl mx-auto mb-4"
-    />
-  );
-
   if (phase === "playing-tts") {
     return (
-      <div className="flex flex-col items-center py-4">
-        {avatarVideo}
-        <div className="flex items-center gap-3">
-          <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-          <span className="text-gray-700 text-[15px]">Listening... / Dang nghe...</span>
-        </div>
+      <div className="flex items-center justify-center gap-3 py-4">
+        <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+        <span className="text-gray-700 text-[15px]">Listening... / Dang nghe...</span>
       </div>
     );
   }
@@ -192,7 +178,6 @@ export default function Recorder({
     const pct = (recordedSec / maxDurationSeconds) * 100;
     return (
       <div>
-        {avatarVideo}
         <div className="w-full bg-gray-200 rounded-full h-1.5 mb-4">
           <div className="bg-red-400 h-1.5 rounded-full transition-all duration-1000"
             style={{ width: `${pct}%` }}></div>

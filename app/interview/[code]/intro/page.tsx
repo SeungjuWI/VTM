@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 function getSupportedMimeType(): string {
   const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"];
@@ -18,6 +18,20 @@ export default function IntroPage({ params }: { params: { code: string } }) {
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [expired, setExpired] = useState(false);
+
+  // 코드 유효성 체크 (이미 사용된 코드면 차단)
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`/api/interview/validate?code=${encodeURIComponent(params.code)}`);
+        const json = await res.json();
+        if (!json.success) setExpired(true);
+      } catch {
+        // 네트워크 에러는 무시 (폼 제출 시 다시 체크됨)
+      }
+    })();
+  }, [params.code]);
 
   // 사운드 테스트
   const [soundOk, setSoundOk] = useState(false);
@@ -169,6 +183,32 @@ export default function IntroPage({ params }: { params: { code: string } }) {
       setLoading(false);
     }
   };
+
+  if (expired) {
+    return (
+      <div className="min-h-[calc(100vh-57px)] flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl border-[0.5px] border-gray-200/60 p-10 text-center max-w-md">
+          <div className="w-12 h-12 rounded-full bg-red-400/10 flex items-center justify-center mx-auto mb-4">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F04452" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="15" y1="9" x2="9" y2="15" />
+              <line x1="9" y1="9" x2="15" y2="15" />
+            </svg>
+          </div>
+          <h1 className="text-[20px] font-medium text-gray-900 mb-3">Code Expired</h1>
+          <p className="text-gray-600 text-[14px] mb-4">
+            This access code has already been used or is no longer valid.
+          </p>
+          <p className="text-gray-500 text-[13px] mb-4">
+            If you have any questions, please contact your recruiter.
+          </p>
+          <p className="text-gray-400 text-[12px] italic">
+            Ma truy cap nay da duoc su dung hoac khong con hieu luc. Vui long lien he nguoi tuyen dung.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-8 px-4">
