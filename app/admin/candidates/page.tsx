@@ -154,10 +154,13 @@ export default function CandidatesPage() {
         body: JSON.stringify({ candidateIds: targets.map((c) => c.id) }),
       });
       const json = await res.json();
-      setResult(`AI 인터뷰 발송 — 성공: ${json.sent} / 실패: ${json.failed} / 전체: ${json.total}`);
+      const msg = `AI 인터뷰 발송 완료\n\n성공: ${json.sent}명\n실패: ${json.failed}명\n전체: ${json.total}명`;
+      setResult(msg.replace(/\n/g, " · "));
+      alert(msg);
       fetchCandidates();
     } catch {
       setResult("AI 인터뷰 발송 실패");
+      alert("AI 인터뷰 발송 실패");
     }
     setSendingAll(false);
   };
@@ -400,9 +403,15 @@ function CandidateDetailModal({ candidate: initCandidate, onClose }: { candidate
         body: JSON.stringify({ candidateIds: [c.id] }),
       });
       const json = await res.json();
-      if (json.success && json.results?.[0]?.sent) {
+      const r = json.results?.[0];
+      if (json.success && r?.sent) {
         setC((prev) => ({ ...prev, pipeline_status: "ai_interview_sent" } as Candidate));
+        alert(`발송 완료: ${r.code}`);
+      } else {
+        alert(`발송 실패: ${r?.error || "Unknown error"}`);
       }
+    } catch {
+      alert("발송 실패: 네트워크 오류");
     } finally {
       setSendingInterview(false);
     }
