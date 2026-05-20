@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { updateTalentVerification } from "@/lib/create-talent-card";
 import { useAdminI18n } from "@/lib/admin-i18n";
+import { JD_MAP } from "@/lib/jd-data";
+import { getUserProfile } from "@/lib/supabase-auth";
 
 interface Candidate {
   id: string;
@@ -94,6 +96,13 @@ export default function CandidatesPage() {
   const [message, setMessage] = useState("");
   const [result, setResult] = useState<string | null>(null);
   const [sendingAll, setSendingAll] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) getUserProfile(session.user.id).then((p) => { if (p?.role === "super_admin") setIsSuperAdmin(true); });
+    });
+  }, []);
 
   const fetchCandidates = useCallback(async () => {
     try {
@@ -206,20 +215,33 @@ export default function CandidatesPage() {
     <div>
       <div className="flex items-center justify-between mb-5">
         <h1 className="text-[22px] font-medium text-gray-900">{t("candidates.title")}</h1>
-        <div className="flex gap-2">
-          <button onClick={() => runAction("/api/generate-cards", t("candidates.generateCards"))} disabled={busy}
-            className="px-4 py-2 bg-[#1D9E75] text-white text-[13px] rounded-xl hover:bg-[#178A64] transition-colors disabled:opacity-50">
-            {t("candidates.generateCards")}
-          </button>
-          <button onClick={() => runAction("/api/screen-batch", t("candidates.llmScreening"))} disabled={busy}
-            className="px-4 py-2 bg-[#3182F6] text-white text-[13px] rounded-xl hover:bg-[#2272EB] transition-colors disabled:opacity-50">
-            {t("candidates.llmScreening")}
-          </button>
-          <button onClick={() => runAction("/api/sync-sheets", t("candidates.syncSheets"))} disabled={busy}
-            className="px-4 py-2 bg-gray-900 text-white text-[13px] rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50">
-            {t("candidates.syncSheets")}
-          </button>
-        </div>
+        {isSuperAdmin && (
+          <div className="flex gap-2">
+            <button onClick={async () => {
+                if (!confirm("중복 후보자를 정리합니다. 진행하시겠습니까?")) return;
+                setBusy(true); setMessage("중복 정리 중...");
+                const res = await fetch("/api/admin/dedup-candidates", { method: "POST" });
+                const json = await res.json();
+                setResult(`중복 그룹 ${json.duplicateGroups}개, ${json.deleted}명 삭제`);
+                setBusy(false); fetchCandidates();
+              }} disabled={busy}
+              className="px-4 py-2 bg-gray-600 text-white text-[13px] rounded-xl hover:bg-gray-700 transition-colors disabled:opacity-50">
+              중복 정리
+            </button>
+            <button onClick={() => runAction("/api/generate-cards", t("candidates.generateCards"))} disabled={busy}
+              className="px-4 py-2 bg-[#1D9E75] text-white text-[13px] rounded-xl hover:bg-[#178A64] transition-colors disabled:opacity-50">
+              {t("candidates.generateCards")}
+            </button>
+            <button onClick={() => runAction("/api/screen-batch", t("candidates.llmScreening"))} disabled={busy}
+              className="px-4 py-2 bg-[#3182F6] text-white text-[13px] rounded-xl hover:bg-[#2272EB] transition-colors disabled:opacity-50">
+              {t("candidates.llmScreening")}
+            </button>
+            <button onClick={() => runAction("/api/sync-sheets", t("candidates.syncSheets"))} disabled={busy}
+              className="px-4 py-2 bg-gray-900 text-white text-[13px] rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50">
+              {t("candidates.syncSheets")}
+            </button>
+          </div>
+        )}
       </div>
 
       {busy && (
@@ -301,7 +323,7 @@ export default function CandidatesPage() {
         </select>
       </div>
 
-      {activeTab === "ai_passed" && filtered.length > 0 && (
+      {isSuperAdmin && activeTab === "ai_passed" && filtered.length > 0 && (
         <div className="mb-3 flex items-center justify-between bg-blue-50 border border-blue-500/20 rounded-xl px-4 py-3">
           <span className="text-[13px] text-blue-600">
             {filtered.filter((c) => c.email).length}명에게 AI 인터뷰 코드를 일괄 발송할 수 있습니다
@@ -332,8 +354,12 @@ export default function CandidatesPage() {
                     <StatusBadge status={c.pipeline_status} score={c.llm_score} t={t} />
                   </div>
                   <div className="flex items-center gap-2 text-[12px] text-gray-500">
-                    {c.applied_job && <span className="text-[#3182F6]">{c.applied_job.match(/^([A-Z]+\d+)/)?.[1]}</span>}
-                    {c.applied_job && c.position && <span>·</span>}
+                    {c.applied_job?.match(/^([A-Z]+\d+)/)?.[1] && (
+                      <span className="bg-[#E8F3FF] text-[#3182F6] px-1.5 py-0.5 rounded text-[11px] font-medium">
+                        {c.applied_job.match(/^([A-Z]+\d+)/)?.[1]}
+                      </span>
+                    )}
+                    {c.applied_job?.match(/^([A-Z]+\d+)/)?.[1] && c.position && <span>·</span>}
                     {c.position && <span>{c.position}</span>}
                     {(c.position || c.applied_job) && c.city && <span>·</span>}
                     {c.city && <span>{c.city}</span>}
@@ -373,7 +399,9 @@ function CandidateDetailModal({ candidate: initCandidate, onClose }: { candidate
   const [sendingInterview, setSendingInterview] = useState(false);
   const [interviewSession, setInterviewSession] = useState<{ id: string; access_code: string; status: string; total_score: number | null } | null>(null);
   const [loadingSession, setLoadingSession] = useState(false);
+  const [assigningJD, setAssigningJD] = useState(false);
   const summary = c.llm_summary ? JSON.parse(c.llm_summary) : null;
+  const currentJobCode = c.applied_job?.match(/^([A-Z]+\d+)/)?.[1] || "";
 
   // 언어별 데이터 선택
   const getSummaryText = () => lang === "ko" ? (summary?.summary_ko || summary?.summary_en || summary?.summary || "") : (summary?.summary_en || summary?.summary || "");
@@ -390,6 +418,18 @@ function CandidateDetailModal({ candidate: initCandidate, onClose }: { candidate
 
   const saveMemo = async () => {
     await supabase.from("candidates").update({ phone_interview_note: memo, updated_at: new Date().toISOString() }).eq("id", c.id);
+  };
+
+  const assignJD = async (code: string) => {
+    setAssigningJD(true);
+    const jd = JD_MAP[code];
+    const newAppliedJob = code ? `${code} - ${jd?.position || ""}` : "";
+    await supabase.from("candidates").update({
+      applied_job: newAppliedJob || null,
+      updated_at: new Date().toISOString(),
+    }).eq("id", c.id);
+    setC((prev) => ({ ...prev, applied_job: newAppliedJob || null } as Candidate));
+    setAssigningJD(false);
   };
 
   // AI 인터뷰 세션 조회
@@ -468,6 +508,21 @@ function CandidateDetailModal({ candidate: initCandidate, onClose }: { candidate
               {c.applied_company && <InfoRow label={t("detail.appliedCompany")} value={c.applied_company} />}
               {c.applied_date && <InfoRow label={t("detail.appliedDate")} value={c.applied_date} />}
             </div>
+          </div>
+
+          <div>
+            <p className="text-[11px] text-gray-500 mb-3">JD 배정</p>
+            <select
+              value={currentJobCode}
+              onChange={(e) => assignJD(e.target.value)}
+              disabled={assigningJD}
+              className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-gray-900 focus:outline-none focus:border-gray-300 disabled:opacity-50"
+            >
+              <option value="">미배정</option>
+              {Object.entries(JD_MAP).map(([code, jd]) => (
+                <option key={code} value={code}>{code} — {jd.company} · {jd.position}</option>
+              ))}
+            </select>
           </div>
 
           {summary && (

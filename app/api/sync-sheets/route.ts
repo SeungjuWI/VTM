@@ -37,12 +37,20 @@ export async function POST() {
           .from("candidates")
           .select("sheet_source, sheet_row_identifier, pipeline_status");
 
+        // sheet_row_identifier만으로 dedup (같은 사람이 여러 탭에 있어도 1건만)
         const existingMap = new Map<string, string>();
         (existing || []).forEach((e) => {
           if (e.sheet_row_identifier) {
-            existingMap.set(`${e.sheet_source}::${e.sheet_row_identifier}`, e.pipeline_status);
+            const current = existingMap.get(e.sheet_row_identifier);
+            // 이미 진행된 상태(passed 등)가 있으면 그걸 우선
+            if (!current || current === "new") {
+              existingMap.set(e.sheet_row_identifier, e.pipeline_status);
+            }
           }
         });
+
+        // 이번 동기화에서도 같은 row_identifier 중복 방지
+        const seenInBatch = new Set<string>();
 
         send({ type: "status", message: `기존 ${existingMap.size}명 확인. 동기화 시작...` });
 
@@ -54,8 +62,11 @@ export async function POST() {
           const updateRows = [];
 
           for (const c of chunk) {
-            const key = `${c.sheet_source}::${c.sheet_row_identifier}`;
-            const existingStatus = existingMap.get(key);
+            const rowId = c.sheet_row_identifier;
+            // 같은 batch 내 중복 스킵
+            if (seenInBatch.has(rowId)) { skipped++; continue; }
+            seenInBatch.add(rowId);
+            const existingStatus = existingMap.get(rowId);
             const row = {
               full_name: c.full_name,
               email: c.email || null,
