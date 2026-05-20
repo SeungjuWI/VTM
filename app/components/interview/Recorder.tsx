@@ -11,7 +11,6 @@ type Phase =
 interface Props {
   ttsAudioUrl: string;
   maxDurationSeconds: number;
-  stream: MediaStream;
   onComplete: (audioBlob: Blob, mimeType: string) => Promise<void>;
 }
 
@@ -50,7 +49,6 @@ function playBeep() {
 export default function Recorder({
   ttsAudioUrl,
   maxDurationSeconds,
-  stream,
   onComplete,
 }: Props) {
   const [phase, setPhase] = useState<Phase>("playing-tts");
@@ -58,6 +56,7 @@ export default function Recorder({
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const mimeTypeRef = useRef<string>(getSupportedMimeType());
@@ -70,13 +69,22 @@ export default function Recorder({
     }
   }, []);
 
-  const startRecording = useCallback(() => {
+  const startRecording = useCallback(async () => {
+    // 매번 새 stream 획득 (이전 질문에서 사용한 stream 문제 방지)
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+    } catch {
+      console.error("Failed to get mic stream for recording");
+      return;
+    }
+
     playBeep();
 
     chunksRef.current = [];
     let recorder: MediaRecorder;
     try {
-      recorder = new MediaRecorder(stream, {
+      recorder = new MediaRecorder(streamRef.current, {
         mimeType: mimeTypeRef.current,
       });
     } catch (err) {
@@ -89,6 +97,8 @@ export default function Recorder({
     };
 
     recorder.onstop = async () => {
+      // stream 해제
+      streamRef.current?.getTracks().forEach((t) => t.stop());
       const blob = new Blob(chunksRef.current, { type: mimeTypeRef.current });
       setPhase("uploading");
       try {
@@ -114,7 +124,7 @@ export default function Recorder({
         return next;
       });
     }, 1000);
-  }, [maxDurationSeconds, onComplete, stopRecording, stream]);
+  }, [maxDurationSeconds, onComplete, stopRecording]);
 
   // 마운트 시 TTS 자동재생 → 끝나면 녹음 시작
   useEffect(() => {
@@ -142,6 +152,7 @@ export default function Recorder({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       audioRef.current?.pause();
+      streamRef.current?.getTracks().forEach((t) => t.stop());
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

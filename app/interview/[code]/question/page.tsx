@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Recorder from "@/app/components/interview/Recorder";
 
 interface Question {
@@ -24,8 +24,6 @@ export default function QuestionPage({ params }: { params: { code: string } }) {
   const [recordStartedAt, setRecordStartedAt] = useState(0);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
 
-  const streamRef = useRef<MediaStream | null>(null);
-
   // 브라우저 탭 닫기/새로고침 방지
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -45,13 +43,6 @@ export default function QuestionPage({ params }: { params: { code: string } }) {
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
-
-  // 컴포넌트 언마운트 시 마이크 해제
-  useEffect(() => {
-    return () => {
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-    };
   }, []);
 
   // 질문 로드
@@ -74,17 +65,7 @@ export default function QuestionPage({ params }: { params: { code: string } }) {
     finally { setLoading(false); }
   };
 
-  // Start 버튼 → 마이크 획득 + 질문 공개
-  const handleStart = async () => {
-    if (!streamRef.current || !streamRef.current.active) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        streamRef.current = stream;
-      } catch {
-        alert("Microphone permission is required.\nYeu cau cap quyen micro.");
-        return;
-      }
-    }
+  const handleStart = () => {
     setRecordStartedAt(Date.now());
     setStarted(true);
   };
@@ -121,13 +102,10 @@ export default function QuestionPage({ params }: { params: { code: string } }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code: params.code }),
     });
-    // 마이크 해제
-    streamRef.current?.getTracks().forEach((t) => t.stop());
     window.location.href = `/interview/${params.code}/complete`;
   };
 
   const handleAbandon = useCallback(async () => {
-    streamRef.current?.getTracks().forEach((t) => t.stop());
     await fetch("/api/interview/abandon", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -221,15 +199,12 @@ export default function QuestionPage({ params }: { params: { code: string } }) {
             </div>
 
             <div className="border-t border-gray-100 p-6 bg-gray-50/50">
-              {streamRef.current && (
-                <Recorder
-                  key={`q-${order}`}
-                  ttsAudioUrl={ttsSignedUrl}
-                  maxDurationSeconds={question.max_duration_seconds}
-                  stream={streamRef.current}
-                  onComplete={handleComplete}
-                />
-              )}
+              <Recorder
+                key={`q-${order}`}
+                ttsAudioUrl={ttsSignedUrl}
+                maxDurationSeconds={question.max_duration_seconds}
+                onComplete={handleComplete}
+              />
             </div>
           </div>
         )}
