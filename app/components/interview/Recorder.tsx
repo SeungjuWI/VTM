@@ -6,6 +6,7 @@ type Phase =
   | "playing-tts"
   | "recording"
   | "uploading"
+  | "upload-failed"
   | "done";
 
 interface Props {
@@ -76,6 +77,7 @@ export default function Recorder({
 }: Props) {
   const [phase, setPhase] = useState<Phase>("playing-tts");
   const [recordedSec, setRecordedSec] = useState(0);
+  const [uploadError, setUploadError] = useState("");
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -84,6 +86,7 @@ export default function Recorder({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const mimeTypeRef = useRef<string>(getSupportedMimeType());
   const startedRef = useRef(false);
+  const lastBlobRef = useRef<Blob | null>(null);
 
   const stopRecording = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -91,6 +94,20 @@ export default function Recorder({
       mediaRecorderRef.current.stop();
     }
   }, []);
+
+  const retryUpload = useCallback(async () => {
+    if (!lastBlobRef.current) return;
+    setPhase("uploading");
+    setUploadError("");
+    try {
+      await onComplete(lastBlobRef.current, mimeTypeRef.current);
+      setPhase("done");
+    } catch (err) {
+      console.error("Retry failed:", err);
+      setUploadError(err instanceof Error ? err.message : "Upload failed");
+      setPhase("upload-failed");
+    }
+  }, [onComplete]);
 
   const startRecording = useCallback(async () => {
     try {
@@ -127,13 +144,15 @@ export default function Recorder({
     recorder.onstop = async () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
       const blob = new Blob(chunksRef.current, { type: mimeTypeRef.current });
+      lastBlobRef.current = blob;
       setPhase("uploading");
       try {
         await onComplete(blob, mimeTypeRef.current);
         setPhase("done");
       } catch (err) {
         console.error("Upload failed:", err);
-        alert("Upload failed. Please refresh the page and try again.");
+        setUploadError(err instanceof Error ? err.message : "Upload failed");
+        setPhase("upload-failed");
       }
     };
 
@@ -223,6 +242,25 @@ export default function Recorder({
           className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3 rounded-xl font-medium transition-colors duration-100 text-[14px]"
         >
           Submit Answer / Nop cau tra loi
+        </button>
+      </div>
+    );
+  }
+
+  if (phase === "upload-failed") {
+    return (
+      <div className="text-center py-6">
+        <p className="text-red-500 text-[14px] mb-2">
+          {uploadError || "Upload failed"}
+        </p>
+        <p className="text-gray-500 text-[12px] mb-4">
+          Please check your connection and try again. / Vui long kiem tra ket noi va thu lai.
+        </p>
+        <button
+          onClick={retryUpload}
+          className="px-6 py-2.5 bg-blue-500 text-white rounded-xl text-[14px] hover:bg-blue-600 transition-colors duration-100"
+        >
+          Retry / Thu lai
         </button>
       </div>
     );

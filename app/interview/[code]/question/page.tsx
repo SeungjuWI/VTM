@@ -76,9 +76,26 @@ export default function QuestionPage({ params }: { params: { code: string } }) {
     const ext = mimeType.includes("mp4") ? "mp4" : mimeType.includes("ogg") ? "ogg" : "webm";
     formData.append("audio", audioBlob, `answer.${ext}`);
 
-    const res = await fetch("/api/interview/submit", { method: "POST", body: formData });
-    const json = await res.json();
-    if (!json.success) throw new Error(json.message || "Submit failed");
+    // 90초 timeout 추가 — 네트워크 끊김 시 무한 대기 방지
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
+
+    try {
+      const res = await fetch("/api/interview/submit", {
+        method: "POST",
+        body: formData,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message || "Submit failed");
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (err instanceof DOMException && err.name === "AbortError") {
+        throw new Error("Request timed out. Please check your connection.");
+      }
+      throw err;
+    }
 
     setTransitioning(true);
     setTimeout(() => {
@@ -90,16 +107,15 @@ export default function QuestionPage({ params }: { params: { code: string } }) {
     }, 1200);
   };
 
-  const finalize = async () => {
-    try {
-      await fetch("/api/interview/finalize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: params.code }),
-      });
-    } catch (err) {
-      console.error("Finalize error:", err);
-    }
+  const finalize = () => {
+    // fire-and-forget + keepalive: 페이지 이동해도 요청이 완료되도록
+    fetch("/api/interview/finalize", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: params.code }),
+      keepalive: true,
+    }).catch((err) => console.error("Finalize error:", err));
+
     window.location.href = `/interview/${params.code}/complete`;
   };
 
