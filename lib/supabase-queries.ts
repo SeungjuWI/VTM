@@ -1,8 +1,15 @@
+import { createClient } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import { Talent } from './types'
 
+// ISR/SSG 호환 클라이언트 (cache: 'no-store' 없음 → Next.js revalidate 사용)
+const supabaseISR = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
 export async function fetchTalents(): Promise<Talent[]> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseISR
     .from('talents')
     .select('*')
     .eq('published', true)
@@ -17,7 +24,7 @@ export async function fetchTalents(): Promise<Talent[]> {
 }
 
 export async function fetchTalentById(id: string): Promise<Talent | null> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseISR
     .from('talents')
     .select('*')
     .eq('id', id)
