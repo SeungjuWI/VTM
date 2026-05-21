@@ -81,12 +81,14 @@ export default function MessagesPage() {
     try {
       const res = await fetch(`/api/admin/messages/${threadId}`, { cache: "no-store" });
       const data = await res.json();
+      console.log("[Messages Debug] API response for thread", threadId, ":", JSON.stringify(data));
+      console.log("[Messages Debug] Message count:", data.messages?.length, "Directions:", data.messages?.map((m: Message) => m.direction));
       setMessages(data.messages || []);
       setThreads((prev) =>
         prev.map((t) => (t.thread_id === threadId ? { ...t, unread_count: 0 } : t))
       );
-    } catch {
-      console.error("Failed to load thread");
+    } catch (err) {
+      console.error("Failed to load thread:", err);
     }
   }
 

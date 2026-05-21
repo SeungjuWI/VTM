@@ -31,15 +31,27 @@ export async function POST() {
         let skipped = 0;
         let errors = 0;
 
-        // 기존 후보자의 식별자 + pipeline_status 조회
+        // 기존 후보자의 식별자 + pipeline_status 조회 (1000행 제한 우회)
         send({ type: "status", message: "기존 후보자 조회 중..." });
-        const { data: existing } = await supabase
-          .from("candidates")
-          .select("sheet_source, sheet_row_identifier, pipeline_status");
+        const existingAll: { sheet_source: string; sheet_row_identifier: string; pipeline_status: string }[] = [];
+        {
+          const PAGE = 1000;
+          let from = 0;
+          while (true) {
+            const { data } = await supabase
+              .from("candidates")
+              .select("sheet_source, sheet_row_identifier, pipeline_status")
+              .range(from, from + PAGE - 1);
+            if (!data || data.length === 0) break;
+            existingAll.push(...data);
+            if (data.length < PAGE) break;
+            from += PAGE;
+          }
+        }
 
         // sheet_row_identifier만으로 dedup (같은 사람이 여러 탭에 있어도 1건만)
         const existingMap = new Map<string, string>();
-        (existing || []).forEach((e) => {
+        existingAll.forEach((e) => {
           if (e.sheet_row_identifier) {
             const current = existingMap.get(e.sheet_row_identifier);
             // 이미 진행된 상태(passed 등)가 있으면 그걸 우선
@@ -89,7 +101,7 @@ export async function POST() {
             };
 
             if (existingStatus === undefined) {
-              newRows.push(row);
+              newRows.push({ ...row, pipeline_status: "new" });
             } else if (existingStatus === "new") {
               // 아직 처리 안 된 후보자만 정보 업데이트
               updateRows.push(row);

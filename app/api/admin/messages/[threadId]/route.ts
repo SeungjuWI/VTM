@@ -24,6 +24,8 @@ export async function GET(
     .eq("thread_id", threadId)
     .order("created_at", { ascending: true });
 
+  console.log("[Thread API]", threadId, "→ rows:", data?.length, "error:", error?.message, "directions:", data?.map((m) => m.direction));
+
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -40,5 +42,5 @@ export async function GET(
       .in("id", unreadIds);
   }
 
-  return NextResponse.json({ messages: data });
+  return NextResponse.json({ messages: data, _debug: { threadId, count: data?.length } });
 }
