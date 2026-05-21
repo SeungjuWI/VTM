@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ success: true, sessions: sessionsWithCount });
 }
 
-// 코드 N개 발급
+// 코드 발급
 const CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 function generateCode() {
   let code = "KTC-";
@@ -44,13 +44,25 @@ function generateCode() {
   return code;
 }
 
-export async function POST(req: NextRequest) {
-  const { count } = await req.json();
-  const n = Math.min(Math.max(1, parseInt(count, 10) || 1), 100);
-  const supabase = getSupabaseAdmin();
-  const codes: string[] = [];
+interface CandidateEntry {
+  candidate_name?: string;
+  candidate_email?: string;
+  applied_company?: string;
+  applied_position?: string;
+}
 
-  for (let i = 0; i < n; i++) {
+export async function POST(req: NextRequest) {
+  const body = await req.json();
+  const supabase = getSupabaseAdmin();
+
+  // candidates 배열이 있으면 각각 코드 발급
+  const candidates: CandidateEntry[] = body.candidates || [];
+  // candidates가 없으면 count만큼 빈 코드 발급
+  const count = candidates.length > 0 ? candidates.length : Math.min(Math.max(1, parseInt(body.count, 10) || 1), 100);
+
+  const results: { code: string; candidate_name?: string; candidate_email?: string; applied_company?: string; applied_position?: string }[] = [];
+
+  for (let i = 0; i < count; i++) {
     let code = generateCode();
     let attempts = 0;
     while (attempts < 5) {
@@ -61,12 +73,20 @@ export async function POST(req: NextRequest) {
       attempts++;
     }
 
-    const { error } = await supabase.from("interview_sessions").insert({
+    const entry = candidates[i] || {};
+    const insertData: Record<string, string> = {
       access_code: code,
       status: "pending",
-    });
-    if (!error) codes.push(code);
+    };
+    if (entry.candidate_name) insertData.candidate_name = entry.candidate_name;
+    if (entry.candidate_email) insertData.candidate_email = entry.candidate_email;
+    if (entry.applied_company) insertData.applied_company = entry.applied_company;
+    if (entry.applied_position) insertData.applied_position = entry.applied_position;
+    if (body.deadline) insertData.deadline = body.deadline;
+
+    const { error } = await supabase.from("interview_sessions").insert(insertData);
+    if (!error) results.push({ code, ...entry });
   }
 
-  return NextResponse.json({ success: true, codes });
+  return NextResponse.json({ success: true, results, codes: results.map(r => r.code) });
 }

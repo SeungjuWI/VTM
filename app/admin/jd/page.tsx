@@ -188,7 +188,7 @@ function statusColor(status: string): string {
 function statusLabel(status: string): string {
   const map: Record<string, string> = {
     new: "대기",
-    passed: "AI 합격",
+    passed: "스크리닝 합격",
     ai_interview_sent: "인터뷰 발송",
     ai_interview_done: "인터뷰 완료",
     final_passed: "최종 합격",

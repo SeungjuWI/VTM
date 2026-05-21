@@ -40,7 +40,7 @@ export async function GET(
   return NextResponse.json({ success: true, session, responses: responsesWithUrl });
 }
 
-// 사람 결정 저장
+// 사람 결정 저장 (기본 정보는 발급 시 확정, 수정 불가)
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -53,6 +53,22 @@ export async function PATCH(
     human_review_note: note,
     human_reviewed_at: new Date().toISOString(),
   }).eq("id", params.id);
+
+  return NextResponse.json({ success: true });
+}
+
+// 세션 삭제
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const supabase = getSupabaseAdmin();
+
+  // 관련 응답 먼저 삭제
+  await supabase.from("interview_responses").delete().eq("session_id", params.id);
+  // 세션 삭제
+  const { error } = await supabase.from("interview_sessions").delete().eq("id", params.id);
+  if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
 
   return NextResponse.json({ success: true });
 }

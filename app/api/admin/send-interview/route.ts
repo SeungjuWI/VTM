@@ -205,6 +205,7 @@ export async function POST(req: NextRequest) {
       candidate_name: c.full_name,
       candidate_email: c.email,
       applied_company: company,
+      deadline: deadline,
       status: "pending",
     });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useAdminI18n } from "@/lib/admin-i18n";
 
@@ -10,6 +10,7 @@ interface Session {
   candidate_name: string;
   candidate_email: string;
   applied_company: string | null;
+  applied_position: string | null;
   candidate_id: string | null;
   status: string;
   total_score: number | null;
@@ -17,7 +18,40 @@ interface Session {
   completed_at: string | null;
   created_at: string;
   started_at: string | null;
+  deadline: string | null;
   response_count?: number;
+}
+
+interface CandidateRow {
+  candidate_name: string;
+  candidate_email: string;
+  applied_company: string;
+  applied_position: string;
+}
+
+interface IssuedResult {
+  code: string;
+  candidate_name?: string;
+  candidate_email?: string;
+  applied_company?: string;
+  applied_position?: string;
+}
+
+const emptyRow = (): CandidateRow => ({ candidate_name: "", candidate_email: "", applied_company: "", applied_position: "" });
+
+function isOverdue(session: Session): boolean {
+  if (!session.deadline) return false;
+  if (session.status === "scored" || session.status === "completed") return false;
+  return new Date() > new Date(session.deadline);
+}
+
+function formatDeadline(d: string): string {
+  const date = new Date(d);
+  const m = (date.getMonth() + 1).toString().padStart(2, "0");
+  const day = date.getDate().toString().padStart(2, "0");
+  const h = date.getHours().toString().padStart(2, "0");
+  const min = date.getMinutes().toString().padStart(2, "0");
+  return `${m}/${day} ${h}:${min}`;
 }
 
 export default function InterviewsAdminPage() {
@@ -25,9 +59,15 @@ export default function InterviewsAdminPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [showIssueModal, setShowIssueModal] = useState(false);
-  const [issueCount, setIssueCount] = useState(10);
-  const [issuedCodes, setIssuedCodes] = useState<string[]>([]);
   const [issuing, setIssuing] = useState(false);
+  const [search, setSearch] = useState("");
+  const [companyFilter, setCompanyFilter] = useState<string>("all");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const [rows, setRows] = useState<CandidateRow[]>([emptyRow()]);
+  const [issuedResults, setIssuedResults] = useState<IssuedResult[]>([]);
+  const [issueDeadline, setIssueDeadline] = useState("");
 
   const fetchSessions = async () => {
     setLoading(true);
@@ -39,21 +79,69 @@ export default function InterviewsAdminPage() {
 
   useEffect(() => { fetchSessions(); }, []);
 
+  const companies = useMemo(() => {
+    const set = new Set<string>();
+    sessions.forEach(s => { if (s.applied_company) set.add(s.applied_company); });
+    return Array.from(set).sort();
+  }, [sessions]);
+
+  // 회사별 진행률 계산 (scored or completed / total)
+  const getProgress = (companySessions: Session[]) => {
+    if (companySessions.length === 0) return 0;
+    const done = companySessions.filter(s => s.status === "scored" || s.status === "completed").length;
+    return Math.round((done / companySessions.length) * 100);
+  };
+
+  // 드롭다운 외부 클릭 닫기
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const updateRow = (idx: number, field: keyof CandidateRow, value: string) => {
+    setRows(prev => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r));
+  };
+
+  const addRow = () => setRows(prev => [...prev, emptyRow()]);
+  const removeRow = (idx: number) => {
+    if (rows.length <= 1) return;
+    setRows(prev => prev.filter((_, i) => i !== idx));
+  };
+
   const issueCodes = async () => {
     setIssuing(true);
+    const candidates = rows.filter(r => r.candidate_name || r.candidate_email);
+    const payload: Record<string, unknown> = candidates.length > 0 ? { candidates } : { count: rows.length };
+    if (issueDeadline) payload.deadline = new Date(issueDeadline).toISOString();
+
     const res = await fetch("/api/admin/interviews", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ count: issueCount }),
+      body: JSON.stringify(payload),
     });
     const json = await res.json();
-    setIssuedCodes(json.codes || []);
+    setIssuedResults(json.results || []);
     setIssuing(false);
     fetchSessions();
   };
 
   const copyAll = () => {
-    navigator.clipboard.writeText(issuedCodes.join("\n"));
+    const text = issuedResults.map(r =>
+      [r.code, r.candidate_name, r.candidate_email, r.applied_company, r.applied_position].filter(Boolean).join("\t")
+    ).join("\n");
+    navigator.clipboard.writeText(text);
+  };
+
+  const closeModal = () => {
+    setShowIssueModal(false);
+    setIssuedResults([]);
+    setRows([emptyRow()]);
+    setIssueDeadline("");
   };
 
   const statusBadge = (status: string) => {
@@ -65,24 +153,131 @@ export default function InterviewsAdminPage() {
   };
 
   const statusLabel = (s: Session) => {
-    if (s.status === "abandoned") return `abandoned (${s.response_count ?? "?"}/${7} answered)`;
+    if (s.status === "abandoned") return `abandoned (${s.response_count ?? "?"}/${7})`;
     if (s.status === "in_progress") return `in_progress (${s.response_count ?? "?"}/${7})`;
     return s.status;
   };
 
+  const filtered = sessions.filter((s) => {
+    if (companyFilter !== "all") {
+      if (companyFilter === "none") { if (s.applied_company) return false; }
+      else { if (s.applied_company !== companyFilter) return false; }
+    }
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      s.access_code.toLowerCase().includes(q) ||
+      (s.candidate_name || "").toLowerCase().includes(q) ||
+      (s.candidate_email || "").toLowerCase().includes(q) ||
+      (s.applied_company || "").toLowerCase().includes(q) ||
+      (s.applied_position || "").toLowerCase().includes(q) ||
+      s.status.toLowerCase().includes(q)
+    );
+  });
+
+  const overdueCount = filtered.filter(s => isOverdue(s)).length;
+
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-4">
         <div>
           <h1 className="text-[22px] font-medium text-gray-900">{t("nav.interviews")}</h1>
           <p className="text-[13px] text-gray-500 mt-1">
-            Total: {sessions.length} | Scored: {sessions.filter((s) => s.status === "scored").length} | Pending: {sessions.filter((s) => s.status === "pending").length} | Abandoned: {sessions.filter((s) => s.status === "abandoned").length}
+            Total: {filtered.length}
+            {filtered.length !== sessions.length && ` / ${sessions.length}`}
+            {" | "}Scored: {filtered.filter(s => s.status === "scored").length}
+            {" | "}Pending: {filtered.filter(s => s.status === "pending").length}
+            {overdueCount > 0 && <span className="text-red-500"> | {t("interviews.overdue")}: {overdueCount}</span>}
           </p>
         </div>
         <button onClick={() => setShowIssueModal(true)}
           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl text-[14px] font-medium transition-colors duration-100">
           + {t("interviews.issueCodes")}
         </button>
+      </div>
+
+      {/* 필터 */}
+      <div className="flex gap-3 mb-4 items-center">
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="flex items-center gap-2 px-3 py-2 border-[0.5px] border-gray-200 rounded-full text-[13px] bg-white text-gray-700 cursor-pointer hover:border-gray-300 transition-colors duration-100"
+          >
+            <span className="truncate max-w-[120px]">
+              {companyFilter === "all" ? t("common.all") : companyFilter === "none" ? t("interviews.unassigned") : companyFilter}
+            </span>
+            {companyFilter !== "all" && (
+              <span className="text-[11px] text-blue-500 font-medium">
+                {getProgress(sessions.filter(s => companyFilter === "none" ? !s.applied_company : s.applied_company === companyFilter))}%
+              </span>
+            )}
+            <svg className={`text-gray-400 transition-transform duration-100 ${dropdownOpen ? "rotate-180" : ""}`} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+
+          {dropdownOpen && (
+            <div className="absolute top-full left-0 mt-1 bg-white border-[0.5px] border-gray-200 rounded-xl overflow-hidden z-50 min-w-[240px]">
+              {/* 전체 */}
+              <button
+                onClick={() => { setCompanyFilter("all"); setDropdownOpen(false); }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 text-[13px] hover:bg-gray-50 transition-colors duration-100 ${companyFilter === "all" ? "bg-gray-50 text-gray-900 font-medium" : "text-gray-700"}`}
+              >
+                <span>{t("common.all")}</span>
+                <span className="text-[12px] text-gray-400">{sessions.length}건 · {getProgress(sessions)}%</span>
+              </button>
+
+              <div className="border-t border-gray-100" />
+
+              {companies.map(c => {
+                const companySessions = sessions.filter(s => s.applied_company === c);
+                const progress = getProgress(companySessions);
+                return (
+                  <button
+                    key={c}
+                    onClick={() => { setCompanyFilter(c); setDropdownOpen(false); }}
+                    className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 text-[13px] hover:bg-gray-50 transition-colors duration-100 ${companyFilter === c ? "bg-gray-50 text-gray-900 font-medium" : "text-gray-700"}`}
+                  >
+                    <span className="truncate max-w-[120px]">{c}</span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="w-[40px] h-[4px] bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-500 rounded-full transition-all duration-100" style={{ width: `${progress}%` }} />
+                      </div>
+                      <span className="text-[12px] text-gray-400 w-[60px] text-right">{companySessions.length}건 · {progress}%</span>
+                    </div>
+                  </button>
+                );
+              })}
+
+              {sessions.some(s => !s.applied_company) && (
+                <>
+                  <div className="border-t border-gray-100" />
+                  <button
+                    onClick={() => { setCompanyFilter("none"); setDropdownOpen(false); }}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 text-[13px] hover:bg-gray-50 transition-colors duration-100 ${companyFilter === "none" ? "bg-gray-50 text-gray-900 font-medium" : "text-gray-400"}`}
+                  >
+                    <span>{t("interviews.unassigned")}</span>
+                    <span className="text-[12px] text-gray-400">{sessions.filter(s => !s.applied_company).length}건</span>
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="relative w-[280px]">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("interviews.search")}
+            className="w-full pl-8 pr-8 py-2 border-[0.5px] border-gray-200 rounded-full text-[13px] outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
+          {search && (
+            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -92,62 +287,54 @@ export default function InterviewsAdminPage() {
           <table className="w-full text-[13px]">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-gray-500 font-medium">Code</th>
-                <th className="px-4 py-3 text-left text-gray-500 font-medium">Name</th>
-                <th className="px-4 py-3 text-left text-gray-500 font-medium">Company</th>
-                <th className="px-4 py-3 text-left text-gray-500 font-medium">Status</th>
-                <th className="px-4 py-3 text-left text-gray-500 font-medium">Score</th>
-                <th className="px-4 py-3 text-left text-gray-500 font-medium">Decision</th>
-                <th className="px-4 py-3 text-left text-gray-500 font-medium">Completed</th>
+                <th className="px-4 py-3 text-left text-gray-500 font-medium">{t("interviews.col.code")}</th>
+                <th className="px-4 py-3 text-left text-gray-500 font-medium">{t("interviews.col.name")}</th>
+                <th className="px-4 py-3 text-left text-gray-500 font-medium">{t("interviews.col.company")}</th>
+                <th className="px-4 py-3 text-left text-gray-500 font-medium">{t("interviews.col.position")}</th>
+                <th className="px-4 py-3 text-left text-gray-500 font-medium">{t("interviews.col.status")}</th>
+                <th className="px-4 py-3 text-left text-gray-500 font-medium">{t("interviews.deadline")}</th>
+                <th className="px-4 py-3 text-left text-gray-500 font-medium">{t("interviews.col.score")}</th>
+                <th className="px-4 py-3 text-left text-gray-500 font-medium">{t("interviews.col.decision")}</th>
               </tr>
             </thead>
             <tbody>
-              {sessions.map((s) => (
-                <tr key={s.id} className="border-t border-gray-100 hover:bg-gray-50/50 transition-colors duration-100">
-                  <td className="px-4 py-3 font-mono text-[12px] text-gray-600">{s.access_code}</td>
-                  <td className="px-4 py-3">
-                    {s.candidate_name && s.status !== "pending" ? (
-                      <Link href={`/admin/interviews/${s.id}`} className="text-blue-500 hover:text-blue-600">
-                        {s.candidate_name}
-                      </Link>
-                    ) : (s.candidate_name || <span className="text-gray-400">—</span>)}
-                  </td>
-                  <td className="px-4 py-3 text-[12px] text-gray-600">
-                    <div className="flex items-center gap-1.5">
-                      {s.candidate_id ? (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#E8F3FF] text-[#3182F6] text-[11px]">
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                          auto
-                        </span>
-                      ) : (
-                        <span className="inline-flex px-1.5 py-0.5 rounded-full bg-[#F2F4F6] text-[#8B95A1] text-[11px]">
-                          manual
-                        </span>
-                      )}
-                      {s.applied_company && <span>{s.applied_company}</span>}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`text-[12px] px-2 py-1 rounded-full ${statusBadge(s.status)}`}>{statusLabel(s)}</span>
-                  </td>
-                  <td className="px-4 py-3 font-medium text-gray-900">
-                    {s.total_score !== null ? `${s.total_score}/70 (${Math.round(s.total_score/70*100)}%)` : <span className="text-gray-400">—</span>}
-                  </td>
-                  <td className="px-4 py-3">
-                    {s.human_decision === "pass" && <span className="text-status-available font-medium">PASS</span>}
-                    {s.human_decision === "fail" && <span className="text-red-500 font-medium">FAIL</span>}
-                    {s.human_decision === "hold" && <span className="text-grade-s-text font-medium">HOLD</span>}
-                    {!s.human_decision && <span className="text-gray-400">—</span>}
-                  </td>
-                  <td className="px-4 py-3 text-[12px] text-gray-500">
-                    {s.completed_at ? new Date(s.completed_at).toLocaleString() : "—"}
-                  </td>
-                </tr>
-              ))}
-              {sessions.length === 0 && (
+              {filtered.map((s) => {
+                const overdue = isOverdue(s);
+                return (
+                  <tr key={s.id} className={`border-t border-gray-100 hover:bg-gray-50/50 transition-colors duration-100 ${overdue ? "bg-red-50/30" : ""}`}>
+                    <td className="px-4 py-3 font-mono text-[12px]">
+                      <Link href={`/admin/interviews/${s.id}`} className="text-blue-500 hover:text-blue-600 hover:underline">{s.access_code}</Link>
+                    </td>
+                    <td className="px-4 py-3">{s.candidate_name || <span className="text-gray-400">—</span>}</td>
+                    <td className="px-4 py-3 text-[12px] text-gray-600">{s.applied_company || <span className="text-gray-400">—</span>}</td>
+                    <td className="px-4 py-3 text-[12px] text-gray-600">{s.applied_position || <span className="text-gray-400">—</span>}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-[12px] px-2 py-1 rounded-full ${statusBadge(s.status)}`}>{statusLabel(s)}</span>
+                        {overdue && <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-500">{t("interviews.overdue")}</span>}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-[12px]">
+                      {s.deadline ? (
+                        <span className={overdue ? "text-red-500 font-medium" : "text-gray-600"}>{formatDeadline(s.deadline)}</span>
+                      ) : <span className="text-gray-400">—</span>}
+                    </td>
+                    <td className="px-4 py-3 font-medium text-gray-900">
+                      {s.total_score !== null ? `${s.total_score}/70 (${Math.round(s.total_score/70*100)}%)` : <span className="text-gray-400">—</span>}
+                    </td>
+                    <td className="px-4 py-3">
+                      {s.human_decision === "pass" && <span className="text-status-available font-medium">PASS</span>}
+                      {s.human_decision === "fail" && <span className="text-red-500 font-medium">FAIL</span>}
+                      {s.human_decision === "hold" && <span className="text-grade-s-text font-medium">HOLD</span>}
+                      {!s.human_decision && <span className="text-gray-400">—</span>}
+                    </td>
+                  </tr>
+                );
+              })}
+              {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
-                    No interview sessions yet. Issue codes to get started.
+                  <td colSpan={8} className="px-4 py-12 text-center text-gray-500">
+                    {search || companyFilter !== "all" ? t("interviews.noResult") : t("interviews.noData")}
                   </td>
                 </tr>
               )}
@@ -156,29 +343,112 @@ export default function InterviewsAdminPage() {
         </div>
       )}
 
+      {/* 코드 발급 모달 */}
       {showIssueModal && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => { setShowIssueModal(false); setIssuedCodes([]); }}>
-          <div className="bg-white rounded-2xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={closeModal}>
+          <div className="bg-white rounded-2xl max-w-3xl w-full p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-[18px] font-medium text-gray-900 mb-4">{t("interviews.issueCodes")}</h2>
-            {issuedCodes.length === 0 ? (
+
+            {issuedResults.length === 0 ? (
               <>
-                <label className="block text-[13px] font-medium text-gray-700 mb-2">Number of codes (1-100)</label>
-                <input type="number" value={issueCount} onChange={(e) => setIssueCount(parseInt(e.target.value, 10))}
-                  min={1} max={100} className="w-full px-3 py-2 border-[0.5px] border-gray-200 rounded-xl mb-4 text-[14px] outline-none focus:ring-2 focus:ring-blue-500" />
+                <p className="text-[13px] text-gray-500 mb-3">{t("interviews.issueDesc")}</p>
+
+                <div className="mb-4">
+                  <label className="block text-[13px] font-medium text-gray-700 mb-1.5">{t("interviews.deadlineVN")}</label>
+                  <input type="datetime-local" value={issueDeadline} onChange={(e) => setIssueDeadline(e.target.value)}
+                    className="px-3 py-2 border-[0.5px] border-gray-200 rounded-xl text-[14px] outline-none focus:ring-2 focus:ring-blue-500" />
+                  {!issueDeadline && <p className="text-[12px] text-gray-400 mt-1">{t("interviews.noDeadline")}</p>}
+                </div>
+
+                <div className="border-[0.5px] border-gray-200 rounded-xl overflow-hidden mb-4">
+                  <table className="w-full text-[13px]">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-gray-500 font-medium">{t("interviews.col.name")}</th>
+                        <th className="px-3 py-2 text-left text-gray-500 font-medium">{t("interviews.col.email")}</th>
+                        <th className="px-3 py-2 text-left text-gray-500 font-medium">{t("interviews.col.company")}</th>
+                        <th className="px-3 py-2 text-left text-gray-500 font-medium">{t("interviews.col.position")}</th>
+                        <th className="px-3 py-2 w-[40px]"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((row, idx) => (
+                        <tr key={idx} className="border-t border-gray-100">
+                          <td className="px-2 py-1.5">
+                            <input type="text" value={row.candidate_name} onChange={(e) => updateRow(idx, "candidate_name", e.target.value)}
+                              placeholder="Nguyen Van A"
+                              className="w-full px-2 py-1.5 border-[0.5px] border-gray-200 rounded-lg text-[13px] outline-none focus:ring-1 focus:ring-blue-500" />
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <input type="text" value={row.candidate_email} onChange={(e) => updateRow(idx, "candidate_email", e.target.value)}
+                              placeholder="email@example.com"
+                              className="w-full px-2 py-1.5 border-[0.5px] border-gray-200 rounded-lg text-[13px] outline-none focus:ring-1 focus:ring-blue-500" />
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <input type="text" value={row.applied_company} onChange={(e) => updateRow(idx, "applied_company", e.target.value)}
+                              placeholder="FPT Software"
+                              className="w-full px-2 py-1.5 border-[0.5px] border-gray-200 rounded-lg text-[13px] outline-none focus:ring-1 focus:ring-blue-500" />
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <input type="text" value={row.applied_position} onChange={(e) => updateRow(idx, "applied_position", e.target.value)}
+                              placeholder="Backend Dev"
+                              className="w-full px-2 py-1.5 border-[0.5px] border-gray-200 rounded-lg text-[13px] outline-none focus:ring-1 focus:ring-blue-500" />
+                          </td>
+                          <td className="px-2 py-1.5 text-center">
+                            {rows.length > 1 && (
+                              <button onClick={() => removeRow(idx)} className="text-gray-400 hover:text-red-500 transition-colors duration-100">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <button onClick={addRow}
+                  className="w-full py-2 border-[0.5px] border-dashed border-gray-300 rounded-xl text-[13px] text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors duration-100 mb-4">
+                  {t("interviews.addRow")}
+                </button>
+
                 <div className="flex gap-2">
-                  <button onClick={() => setShowIssueModal(false)} className="flex-1 px-4 py-2 bg-gray-100 rounded-xl text-[14px] text-gray-700 hover:bg-gray-200 transition-colors duration-100">{t("common.cancel")}</button>
+                  <button onClick={closeModal} className="flex-1 px-4 py-2 bg-gray-100 rounded-xl text-[14px] text-gray-700 hover:bg-gray-200 transition-colors duration-100">{t("common.cancel")}</button>
                   <button onClick={issueCodes} disabled={issuing} className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-xl text-[14px] disabled:opacity-50 hover:bg-blue-600 transition-colors duration-100">
-                    {issuing ? "Issuing..." : "Issue"}
+                    {issuing ? t("interviews.issuing") : `${rows.length}${t("interviews.issueN")}`}
                   </button>
                 </div>
               </>
             ) : (
               <>
-                <p className="text-[13px] text-gray-600 mb-3">{issuedCodes.length} codes issued. Share with candidates:</p>
-                <pre className="bg-gray-50 p-3 rounded-xl text-[13px] font-mono max-h-80 overflow-y-auto whitespace-pre-wrap">{issuedCodes.join("\n")}</pre>
-                <div className="flex gap-2 mt-4">
-                  <button onClick={copyAll} className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-xl text-[14px] hover:bg-gray-800 transition-colors duration-100">Copy All</button>
-                  <button onClick={() => { setShowIssueModal(false); setIssuedCodes([]); }} className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-xl text-[14px] hover:bg-blue-600 transition-colors duration-100">Done</button>
+                <p className="text-[13px] text-gray-600 mb-3">{issuedResults.length}{t("interviews.issueComplete")}</p>
+                <div className="border-[0.5px] border-gray-200 rounded-xl overflow-hidden mb-4">
+                  <table className="w-full text-[13px]">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-gray-500 font-medium">{t("interviews.col.code")}</th>
+                        <th className="px-3 py-2 text-left text-gray-500 font-medium">{t("interviews.col.name")}</th>
+                        <th className="px-3 py-2 text-left text-gray-500 font-medium">{t("interviews.col.email")}</th>
+                        <th className="px-3 py-2 text-left text-gray-500 font-medium">{t("interviews.col.company")}</th>
+                        <th className="px-3 py-2 text-left text-gray-500 font-medium">{t("interviews.col.position")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {issuedResults.map((r, idx) => (
+                        <tr key={idx} className="border-t border-gray-100">
+                          <td className="px-3 py-2 font-mono text-[12px] text-blue-500">{r.code}</td>
+                          <td className="px-3 py-2">{r.candidate_name || "—"}</td>
+                          <td className="px-3 py-2 text-gray-600">{r.candidate_email || "—"}</td>
+                          <td className="px-3 py-2 text-gray-600">{r.applied_company || "—"}</td>
+                          <td className="px-3 py-2 text-gray-600">{r.applied_position || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={copyAll} className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-xl text-[14px] hover:bg-gray-800 transition-colors duration-100">{t("interviews.copyAll")}</button>
+                  <button onClick={closeModal} className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-xl text-[14px] hover:bg-blue-600 transition-colors duration-100">{t("interviews.done")}</button>
                 </div>
               </>
             )}

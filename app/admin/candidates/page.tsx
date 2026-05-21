@@ -732,7 +732,7 @@ function CandidateDetailModal({ candidate: initCandidate, onClose }: { candidate
           )}
 
           <div className="space-y-3 pt-2">
-            {/* AI 합격 → AI 인터뷰 발송 */}
+            {/* 스크리닝 합격 → AI 인터뷰 발송 */}
             {c.pipeline_status === "passed" && (
               <div className="space-y-2">
                 <button onClick={sendAiInterview}

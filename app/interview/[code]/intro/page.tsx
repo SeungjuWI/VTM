@@ -21,6 +21,8 @@ export default function IntroPage({ params }: { params: { code: string } }) {
   const [appliedCompany, setAppliedCompany] = useState("");
   const [phone, setPhone] = useState("");
   const [agreed, setAgreed] = useState(false);
+  // prefill된 필드 추적 (수정 불가)
+  const [lockedFields, setLockedFields] = useState<{ name: boolean; email: boolean; appliedCompany: boolean }>({ name: false, email: false, appliedCompany: false });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -40,9 +42,9 @@ export default function IntroPage({ params }: { params: { code: string } }) {
           return;
         }
         if (json.prefill) {
-          if (json.prefill.name) setName(json.prefill.name);
-          if (json.prefill.email) setEmail(json.prefill.email);
-          if (json.prefill.appliedCompany) setAppliedCompany(json.prefill.appliedCompany);
+          if (json.prefill.name) { setName(json.prefill.name); setLockedFields(prev => ({ ...prev, name: true })); }
+          if (json.prefill.email) { setEmail(json.prefill.email); setLockedFields(prev => ({ ...prev, email: true })); }
+          if (json.prefill.appliedCompany) { setAppliedCompany(json.prefill.appliedCompany); setLockedFields(prev => ({ ...prev, appliedCompany: true })); }
         }
       } catch {
         // 네트워크 에러는 무시
@@ -290,24 +292,27 @@ export default function IntroPage({ params }: { params: { code: string } }) {
                     Full Name / Ho va ten <span className="text-red-500">*</span>
                   </label>
                   <input type="text" value={name} onChange={(e) => setName(e.target.value)}
+                    readOnly={lockedFields.name}
                     placeholder="Nguyen Van A"
-                    className="w-full px-3 py-2.5 border-[0.5px] border-[#E5E8EB] rounded-xl focus:ring-2 focus:ring-[#3182F6] outline-none text-[14px] text-[#191F28] placeholder:text-[#B0B8C1]" />
+                    className={`w-full px-3 py-2.5 border-[0.5px] border-[#E5E8EB] rounded-xl outline-none text-[14px] text-[#191F28] placeholder:text-[#B0B8C1] ${lockedFields.name ? "bg-[#F9FAFB] text-[#6B7684] cursor-not-allowed" : "focus:ring-2 focus:ring-[#3182F6]"}`} />
                 </div>
                 <div>
                   <label className="block text-[13px] font-medium text-[#4E5968] mb-1">
                     Email <span className="text-red-500">*</span>
                   </label>
                   <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                    readOnly={lockedFields.email}
                     placeholder="example@email.com"
-                    className="w-full px-3 py-2.5 border-[0.5px] border-[#E5E8EB] rounded-xl focus:ring-2 focus:ring-[#3182F6] outline-none text-[14px] text-[#191F28] placeholder:text-[#B0B8C1]" />
+                    className={`w-full px-3 py-2.5 border-[0.5px] border-[#E5E8EB] rounded-xl outline-none text-[14px] text-[#191F28] placeholder:text-[#B0B8C1] ${lockedFields.email ? "bg-[#F9FAFB] text-[#6B7684] cursor-not-allowed" : "focus:ring-2 focus:ring-[#3182F6]"}`} />
                 </div>
                 <div>
                   <label className="block text-[13px] font-medium text-[#4E5968] mb-1">
                     Applied Company / Cong ty ung tuyen <span className="text-red-500">*</span>
                   </label>
                   <input type="text" value={appliedCompany} onChange={(e) => setAppliedCompany(e.target.value)}
+                    readOnly={lockedFields.appliedCompany}
                     placeholder="Company name"
-                    className="w-full px-3 py-2.5 border-[0.5px] border-[#E5E8EB] rounded-xl focus:ring-2 focus:ring-[#3182F6] outline-none text-[14px] text-[#191F28] placeholder:text-[#B0B8C1]" />
+                    className={`w-full px-3 py-2.5 border-[0.5px] border-[#E5E8EB] rounded-xl outline-none text-[14px] text-[#191F28] placeholder:text-[#B0B8C1] ${lockedFields.appliedCompany ? "bg-[#F9FAFB] text-[#6B7684] cursor-not-allowed" : "focus:ring-2 focus:ring-[#3182F6]"}`} />
                 </div>
                 <div>
                   <label className="block text-[13px] font-medium text-[#4E5968] mb-1">
