@@ -216,6 +216,12 @@ const translations: Record<string, Record<AdminLang, string>> = {
   "jd.posting.paused": { ko: "일시중지", en: "Paused", vi: "Tạm dừng" },
   "jd.posting.closed": { ko: "마감", en: "Closed", vi: "Đã đóng" },
   "jd.posting.expired": { ko: "만료", en: "Expired", vi: "Hết hạn" },
+  "jd.addCandidates": { ko: "+ 후보자 추가", en: "+ Add Candidates", vi: "+ Thêm ứng viên" },
+  "jd.searchPlaceholder": { ko: "이름, 포지션, 스킬로 검색...", en: "Search by name, position, skills...", vi: "Tìm theo tên, vị trí, kỹ năng..." },
+  "jd.noCandidatesFound": { ko: "검색 결과가 없습니다", en: "No candidates found", vi: "Không tìm thấy ứng viên" },
+  "jd.addSelected": { ko: "선택한 후보자 추가", en: "Add Selected", vi: "Thêm đã chọn" },
+  "jd.alreadyAssigned": { ko: "이미 배정됨", en: "Already assigned", vi: "Đã phân công" },
+  "jd.candidateAdded": { ko: "명 추가 완료", en: "candidate(s) added", vi: "ứng viên đã thêm" },
   // 상태
   "status.new": { ko: "대기", en: "Pending", vi: "Chờ" },
   "status.passed": { ko: "스크리닝 합격", en: "Screening Passed", vi: "Đạt sàng lọc" },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { JD_MAP, loadAllJDs, type JobDescription } from "@/lib/jd-data";
 import { useAdminI18n } from "@/lib/admin-i18n";
@@ -38,6 +38,7 @@ export default function JDPage() {
   const [showAddJD, setShowAddJD] = useState(false);
   const [editingJDCode, setEditingJDCode] = useState<string | null>(null);
   const [dbJDCodes, setDbJDCodes] = useState<Set<string>>(new Set());
+  const [searchingFor, setSearchingFor] = useState<string | null>(null);
 
   const loadPostings = async () => {
     const { data } = await supabase
@@ -242,15 +243,33 @@ export default function JDPage() {
 
             {expandedCode === item.code && (
               <div className="px-5 pb-5 border-t border-gray-100">
-                {item.totalCandidates > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-4 mb-4">
-                    {Object.entries(item.statusCounts).map(([status, count]) => (
+                <div className="flex items-center justify-between pt-4 mb-4">
+                  <div className="flex flex-wrap gap-1.5">
+                    {item.totalCandidates > 0 && Object.entries(item.statusCounts).map(([status, count]) => (
                       <span key={status} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px]"
                         style={{ backgroundColor: pipelineStatusColor(status) + "18", color: pipelineStatusColor(status) }}>
                         {t(`status.${status}`)} {count}
                       </span>
                     ))}
+                    {item.totalCandidates === 0 && (
+                      <span className="text-[11px] text-gray-400">{t("jd.applicants")} 0</span>
+                    )}
                   </div>
+                  <button
+                    onClick={() => setSearchingFor(searchingFor === item.code ? null : item.code)}
+                    className="text-[11px] text-[#3182F6] hover:text-[#2272EB] transition-colors flex-shrink-0"
+                  >
+                    {searchingFor === item.code ? t("common.cancel") : t("jd.addCandidates")}
+                  </button>
+                </div>
+
+                {searchingFor === item.code && (
+                  <CandidateSearchPanel
+                    t={t}
+                    jdCode={item.code}
+                    jdPosition={item.jd.position}
+                    onDone={() => { setSearchingFor(null); loadJDs(); }}
+                  />
                 )}
 
                 <div className="space-y-3">
@@ -567,6 +586,178 @@ function JDDefinitionForm({
           {saving ? t("jd.form.saving") : isEdit ? t("common.edit") : t("jd.form.add")}
         </button>
       </div>
+    </div>
+  );
+}
+
+interface SearchCandidate {
+  id: string;
+  full_name: string;
+  position: string | null;
+  yoe: string | null;
+  skills: string | null;
+  applied_job: string | null;
+  pipeline_status: string;
+  llm_score: number | null;
+}
+
+function CandidateSearchPanel({
+  t,
+  jdCode,
+  jdPosition,
+  onDone,
+}: {
+  t: TFn;
+  jdCode: string;
+  jdPosition: string;
+  onDone: () => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<SearchCandidate[]>([]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  const search = async (q: string) => {
+    if (q.trim().length < 2) { setResults([]); return; }
+    setLoading(true);
+
+    const term = `%${q.trim()}%`;
+    const { data } = await supabase
+      .from("candidates")
+      .select("id, full_name, position, yoe, skills, applied_job, pipeline_status, llm_score")
+      .or(`full_name.ilike.${term},position.ilike.${term},skills.ilike.${term}`)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    setResults(data || []);
+    setLoading(false);
+  };
+
+  const handleInput = (v: string) => {
+    setQuery(v);
+    setMessage("");
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => search(v), 300);
+  };
+
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const isAlreadyAssigned = (c: SearchCandidate) => {
+    const code = c.applied_job?.match(/^([A-Z]+\d+)/)?.[1];
+    return code === jdCode;
+  };
+
+  const handleAdd = async () => {
+    if (selected.size === 0) return;
+    setSaving(true);
+    const newAppliedJob = `${jdCode} - ${jdPosition}`;
+    const ids = Array.from(selected);
+
+    for (const id of ids) {
+      await supabase.from("candidates").update({
+        applied_job: newAppliedJob,
+        updated_at: new Date().toISOString(),
+      }).eq("id", id);
+    }
+
+    setSaving(false);
+    setMessage(`${ids.length}${t("jd.candidateAdded")}`);
+    setSelected(new Set());
+    // 검색 결과 갱신
+    if (query.trim().length >= 2) search(query);
+    setTimeout(() => onDone(), 1200);
+  };
+
+  return (
+    <div className="bg-gray-50 rounded-xl p-4 mb-4 space-y-3">
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => handleInput(e.target.value)}
+        placeholder={t("jd.searchPlaceholder")}
+        autoFocus
+        className="w-full text-[12px] px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-900 outline-none focus:border-[#3182F6]"
+      />
+
+      {loading && <p className="text-[11px] text-gray-400 py-2">{t("common.loading")}</p>}
+
+      {!loading && results.length > 0 && (
+        <div className="max-h-[280px] overflow-y-auto space-y-1.5">
+          {results.map((c) => {
+            const assigned = isAlreadyAssigned(c);
+            const checked = selected.has(c.id);
+            return (
+              <label
+                key={c.id}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${
+                  assigned ? "bg-white opacity-50 cursor-default" : checked ? "bg-[#E8F3FF]" : "bg-white hover:bg-gray-50"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  disabled={assigned}
+                  onChange={() => !assigned && toggle(c.id)}
+                  className="w-3.5 h-3.5 rounded accent-[#3182F6] flex-shrink-0"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] font-medium text-gray-900 truncate">{c.full_name}</span>
+                    {c.llm_score != null && (
+                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                        c.llm_score >= 85 ? "bg-[#FFF8F0] text-[#E8590C]"
+                        : c.llm_score >= 70 ? "bg-[#E8F3FF] text-[#3182F6]"
+                        : "bg-gray-100 text-gray-500"
+                      }`}>
+                        {c.llm_score}
+                      </span>
+                    )}
+                    {assigned && (
+                      <span className="text-[10px] text-gray-400">{t("jd.alreadyAssigned")}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[11px] text-gray-500 mt-0.5">
+                    {c.position && <span className="truncate">{c.position}</span>}
+                    {c.yoe && <><span>·</span><span>{c.yoe}</span></>}
+                    {c.applied_job && !assigned && (
+                      <><span>·</span><span className="text-gray-400 truncate">{c.applied_job}</span></>
+                    )}
+                  </div>
+                </div>
+              </label>
+            );
+          })}
+        </div>
+      )}
+
+      {!loading && query.trim().length >= 2 && results.length === 0 && (
+        <p className="text-[11px] text-gray-400 py-2">{t("jd.noCandidatesFound")}</p>
+      )}
+
+      {message && (
+        <p className="text-[11px] text-[#1D9E75] bg-[#1D9E75]/10 px-3 py-2 rounded-lg">{message}</p>
+      )}
+
+      {selected.size > 0 && (
+        <div className="flex justify-end">
+          <button
+            onClick={handleAdd}
+            disabled={saving}
+            className="px-4 py-2 text-[12px] text-white bg-[#3182F6] rounded-lg hover:bg-[#2272EB] disabled:opacity-50 transition-colors"
+          >
+            {saving ? t("jd.form.saving") : `${t("jd.addSelected")} (${selected.size})`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
