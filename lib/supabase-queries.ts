@@ -5,7 +5,13 @@ import { Talent } from './types'
 // ISR/SSG 호환 클라이언트 (cache: 'no-store' 없음 → Next.js revalidate 사용)
 const supabaseISR = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  {
+    global: {
+      fetch: (url, options = {}) =>
+        fetch(url, { ...options, cache: 'no-store' }),
+    },
+  }
 )
 
 export async function fetchTalents(): Promise<Talent[]> {
