@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Talent } from "@/lib/types";
+import { translateRole } from "@/lib/i18n";
 import { RadarChart } from "./RadarChart";
 import { InterviewRequestModal } from "./InterviewRequestModal";
 import { Toast } from "@/app/components/ui/Toast";
@@ -64,7 +65,7 @@ export function TalentDetailModal({ talent, onClose }: { talent: Talent; onClose
           <div className="flex items-center gap-4">
             <img src={talent.photo_url || "/default-profile.png"} alt="" className="w-[72px] h-[72px] rounded-full object-cover" />
             <div>
-              <p className="text-[18px] font-medium text-gray-900 mb-1">{talent.role}</p>
+              <p className="text-[18px] font-medium text-gray-900 mb-1">{translateRole(talent.role)}</p>
               <p className="text-[14px] text-gray-500">{talent.years_exp > 0 ? `${talent.years_exp}년차` : "신입"} · {talent.location}</p>
             </div>
           </div>

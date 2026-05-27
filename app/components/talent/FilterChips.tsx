@@ -1,26 +1,37 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { translateRole } from "@/lib/i18n";
 
 export type RoleFilter = string;
 export type SortOption = string;
 
-const ROLE_CATEGORIES: { label: string; roles: string[] }[] = [
-  { label: "전체", roles: [] },
+// 카테고리별 소속 판별 (번역된 한국어 role 기준)
+const CATEGORY_MATCHERS: { label: string; match: (role: string) => boolean }[] = [
   {
     label: "개발자",
-    roles: ["프론트엔드", "백엔드", "풀스택", "DevOps", "모바일", "Frontend", "Backend", "Fullstack", "Full-stack", "Full Stack", "Embedded", "Mobile", "Software"],
+    match: (r) => r.includes("개발자") || (r.includes("엔지니어") && !r.includes("QA") && !r.includes("AI") && !r.includes("ML") && !r.includes("데이터")),
   },
   {
     label: "디자이너",
-    roles: ["UI/UX 디자이너", "그래픽 디자이너", "모션 디자이너", "UI/UX", "UX/UI", "Designer"],
+    match: (r) => r.includes("디자이너"),
   },
   {
-    label: "데이터",
-    roles: ["데이터 분석가", "데이터 엔지니어", "AI/ML", "Data", "AI", "IoT"],
+    label: "데이터/AI",
+    match: (r) => r.includes("데이터") || r.includes("AI") || r.includes("ML"),
   },
-  { label: "QA", roles: ["QA", "Test"] },
-  { label: "마케팅", roles: ["Marketing", "TikTok", "Content", "마케팅"] },
+  {
+    label: "QA",
+    match: (r) => r.includes("QA"),
+  },
+  {
+    label: "마케팅",
+    match: (r) => r.includes("마케") || r.includes("이커머스") || r.includes("광고"),
+  },
+  {
+    label: "기타",
+    match: (r) => r.includes("HR") || r.includes("회계") || r.includes("재무") || r.includes("행정") || r.includes("오피스") || r.includes("통역"),
+  },
 ];
 
 const SORT_OPTIONS: { label: string; value: string }[] = [
@@ -34,18 +45,18 @@ const SORT_OPTIONS: { label: string; value: string }[] = [
 ];
 
 interface FilterChipsProps {
+  roles?: string[];
   onRoleChange?: (roles: string[]) => void;
   onSortChange?: (sort: string) => void;
 }
 
-export function FilterChips({ onRoleChange, onSortChange }: FilterChipsProps) {
+export function FilterChips({ roles: rawRoles, onRoleChange, onSortChange }: FilterChipsProps) {
   const [activeCategory, setActiveCategory] = useState("전체");
   const [activeSubRole, setActiveSubRole] = useState<string | null>(null);
   const [sort, setSort] = useState("recommended");
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
 
-  // 드롭다운 바깥 클릭 시 닫기
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
@@ -56,21 +67,38 @@ export function FilterChips({ onRoleChange, onSortChange }: FilterChipsProps) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const currentCategory = ROLE_CATEGORIES.find((c) => c.label === activeCategory);
-  const hasSubRoles = currentCategory && currentCategory.roles.length > 0;
+  // 실제 데이터에서 번역된 role 목록 → 카테고리별 그룹
+  const categoryRoles = useMemo(() => {
+    const translatedRoles = (rawRoles || []).map(translateRole);
+    const unique = Array.from(new Set(translatedRoles)).sort();
+
+    const map: Record<string, string[]> = {};
+    for (const cat of CATEGORY_MATCHERS) {
+      const matched = unique.filter(cat.match);
+      if (matched.length > 0) {
+        map[cat.label] = matched;
+      }
+    }
+    return map;
+  }, [rawRoles]);
+
+  const categories = ["전체", ...Object.keys(categoryRoles)];
+  const currentSubRoles = categoryRoles[activeCategory] || [];
 
   function handleCategoryClick(label: string) {
     setActiveCategory(label);
     setActiveSubRole(null);
-    const cat = ROLE_CATEGORIES.find((c) => c.label === label);
-    onRoleChange?.(cat?.roles.length ? cat.roles : []);
+    if (label === "전체") {
+      onRoleChange?.([]);
+    } else {
+      onRoleChange?.(categoryRoles[label] || []);
+    }
   }
 
   function handleSubRoleClick(role: string) {
     if (activeSubRole === role) {
-      // 다시 클릭하면 해제 → 상위 카테고리 전체
       setActiveSubRole(null);
-      onRoleChange?.(currentCategory?.roles || []);
+      onRoleChange?.(categoryRoles[activeCategory] || []);
     } else {
       setActiveSubRole(role);
       onRoleChange?.([role]);
@@ -87,10 +115,9 @@ export function FilterChips({ onRoleChange, onSortChange }: FilterChipsProps) {
 
   return (
     <div className="space-y-2.5">
-      {/* 상위 카테고리 + 정렬 */}
       <div className="flex items-center justify-between">
         <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-          {ROLE_CATEGORIES.map(({ label }) => {
+          {categories.map((label) => {
             const isActive = activeCategory === label;
             return (
               <button
@@ -108,7 +135,6 @@ export function FilterChips({ onRoleChange, onSortChange }: FilterChipsProps) {
           })}
         </div>
 
-        {/* 정렬 드롭다운 */}
         <div className="relative ml-3" ref={sortRef}>
           <button
             onClick={() => setShowSortDropdown(!showSortDropdown)}
@@ -139,10 +165,9 @@ export function FilterChips({ onRoleChange, onSortChange }: FilterChipsProps) {
         </div>
       </div>
 
-      {/* 세부 직무 칩 */}
-      {hasSubRoles && (
+      {currentSubRoles.length > 0 && (
         <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
-          {currentCategory.roles.map((role) => {
+          {currentSubRoles.map((role) => {
             const isActive = activeSubRole === role;
             return (
               <button

@@ -11,7 +11,7 @@ const LANDING_TALENTS: Talent[] = [
   {
     id: "landing-1", name: "Tran N.", role: "프론트엔드", years_exp: 3, location: "호치민",
     ovr_score: 89, ovr_grade: "S", top_skills: ["React", "TypeScript"], korean_level: 4,
-    desired_salary_krw: 150, availability: "immediate",
+    salary_min_vnd: 12000000, salary_max_vnd: 18000000, availability: "immediate",
     ktc_comment: "한국 기업 협업 경험 풍부. 의사소통 명료하고 일정 준수 우수.",
     tags: ["한국어 비즈니스", "원격 가능", "한국 기업 경험"],
     abilities: { technical: 88, english: 78, collaboration: 92, stability: 90, growth: 86 },
@@ -28,7 +28,7 @@ const LANDING_TALENTS: Talent[] = [
   {
     id: "landing-2", name: "Hoang L.", role: "백엔드", years_exp: 4, location: "하노이",
     ovr_score: 85, ovr_grade: "S", top_skills: ["Java", "Spring Boot"], korean_level: 3,
-    desired_salary_krw: 180, availability: "negotiable",
+    salary_min_vnd: 15000000, salary_max_vnd: 22000000, availability: "negotiable",
     ktc_comment: "대규모 트래픽 처리 경험 보유. 꼼꼼한 성격으로 코드 리뷰에 적극적.",
     tags: ["대규모 트래픽", "MSA 경험", "코드 리뷰 문화"],
     abilities: { technical: 90, english: 82, collaboration: 78, stability: 88, growth: 80 },
@@ -45,7 +45,7 @@ const LANDING_TALENTS: Talent[] = [
   {
     id: "landing-3", name: "Minh T.", role: "UI/UX 디자이너", years_exp: 3, location: "호치민",
     ovr_score: 87, ovr_grade: "S", top_skills: ["Figma", "Prototyping"], korean_level: 5,
-    desired_salary_krw: 130, availability: "immediate",
+    salary_min_vnd: 12000000, salary_max_vnd: 16000000, availability: "immediate",
     ktc_comment: "차분하고 논리적인 디자이너. 한국어 능통하여 커뮤니케이션 비용 매우 낮음.",
     tags: ["한국어 능통", "디자인 시스템", "스타트업 경험"],
     abilities: { technical: 82, english: 70, collaboration: 90, stability: 85, growth: 88 },
@@ -62,7 +62,7 @@ const LANDING_TALENTS: Talent[] = [
   {
     id: "landing-4", name: "Duc P.", role: "풀스택", years_exp: 3, location: "다낭",
     ovr_score: 78, ovr_grade: "A", top_skills: ["Node.js", "React"], korean_level: 2,
-    desired_salary_krw: 140, availability: "negotiable",
+    salary_min_vnd: 12000000, salary_max_vnd: 20000000, availability: "negotiable",
     ktc_comment: "프론트와 백엔드를 균형 있게 다루는 타입. 팀 협업에서 강점.",
     tags: ["풀스택", "팀 플레이어", "원격 가능"],
     abilities: { technical: 80, english: 78, collaboration: 82, stability: 75, growth: 76 },

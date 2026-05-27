@@ -16,7 +16,8 @@ export type TalentFormData = {
   ovr_grade: OvrGrade;
   top_skills: [string, string];
   korean_level: 1 | 2 | 3 | 4 | 5;
-  desired_salary_krw: number;
+  salary_min_vnd: number;
+  salary_max_vnd: number;
   availability: Availability;
   ktc_comment: string;
   abilities: Abilities;
@@ -35,7 +36,8 @@ const DEFAULT_DATA: TalentFormData = {
   ovr_grade: "C",
   top_skills: ["", ""],
   korean_level: 1,
-  desired_salary_krw: 0,
+  salary_min_vnd: 0,
+  salary_max_vnd: 0,
   availability: "negotiable",
   ktc_comment: "",
   abilities: { technical: 0, english: 0, collaboration: 0, stability: 0, growth: 0 },
@@ -581,12 +583,22 @@ export function TalentForm({
             />
           </div>
           <div>
-            <FieldLabel sub="만원/월">희망 월급</FieldLabel>
+            <FieldLabel sub="VND/월">희망 연봉 (최소)</FieldLabel>
             <input
               type="number"
               className={inputClass}
-              value={form.desired_salary_krw || ""}
-              onChange={(e) => updateField("desired_salary_krw", parseInt(e.target.value) || 0)}
+              value={form.salary_min_vnd || ""}
+              onChange={(e) => updateField("salary_min_vnd", parseInt(e.target.value) || 0)}
+              placeholder="0"
+            />
+          </div>
+          <div>
+            <FieldLabel sub="VND/월">희망 연봉 (최대)</FieldLabel>
+            <input
+              type="number"
+              className={inputClass}
+              value={form.salary_max_vnd || ""}
+              onChange={(e) => updateField("salary_max_vnd", parseInt(e.target.value) || 0)}
               placeholder="0"
             />
           </div>

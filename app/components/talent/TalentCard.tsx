@@ -1,4 +1,5 @@
 import { Talent } from "@/lib/types";
+import { translateRole } from "@/lib/i18n";
 
 function getScoreStyle(score: number) {
   if (score >= 85) return "bg-grade-s-bg text-grade-s-text";
@@ -26,7 +27,7 @@ export function TalentCard({ talent, blurPhoto }: { talent: Talent; blurPhoto?: 
         </span>
       </div>
 
-      <p className="text-[15px] font-medium text-gray-900 leading-tight">{talent.role}</p>
+      <p className="text-[15px] font-medium text-gray-900 leading-tight">{translateRole(talent.role)}</p>
       <p className="text-[12px] text-gray-500 mt-[2px]">
         {talent.years_exp > 0 ? `${talent.years_exp}년차` : "신입"} · {talent.location}
       </p>
@@ -42,9 +43,9 @@ export function TalentCard({ talent, blurPhoto }: { talent: Talent; blurPhoto?: 
         </div>
       )}
 
-      {/* 하단: 검증 칩 */}
-      {verification.length > 0 && (
-        <div className="flex gap-1.5 mt-3 pt-3 border-t border-gray-100">
+      {/* 하단: 검증 칩 + 연봉 */}
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+        <div className="flex gap-1.5">
           {verification.map((chip) => (
             <span key={chip} className="text-[10px] px-[7px] py-[2px] rounded-full leading-[16px] inline-flex items-center"
               style={{ backgroundColor: (VERIFY_COLORS[chip] || "#8B95A1") + "15", color: VERIFY_COLORS[chip] || "#8B95A1" }}>
@@ -52,7 +53,12 @@ export function TalentCard({ talent, blurPhoto }: { talent: Talent; blurPhoto?: 
             </span>
           ))}
         </div>
-      )}
+        {talent.salary_min_vnd > 0 && (
+          <span className="text-[11px] font-medium text-blue-500">
+            {(talent.salary_min_vnd / 1000000).toFixed(0)}~{(talent.salary_max_vnd / 1000000).toFixed(0)}M
+          </span>
+        )}
+      </div>
     </div>
   );
 }

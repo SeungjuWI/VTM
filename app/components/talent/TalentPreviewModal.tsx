@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Talent, toInitials } from "@/lib/types";
+import { translateRole } from "@/lib/i18n";
 import { RadarChart } from "./RadarChart";
 
 const ABILITY_KEYS = ["technical", "english", "collaboration", "stability", "growth"] as const;
@@ -53,7 +54,7 @@ export function TalentPreviewModal({ talent, onClose }: { talent: Talent; onClos
               </div>
             )}
             <div>
-              <p className="text-[18px] font-medium text-gray-900 mb-1">{talent.role}</p>
+              <p className="text-[18px] font-medium text-gray-900 mb-1">{translateRole(talent.role)}</p>
               <p className="text-[14px] text-gray-500">{talent.years_exp > 0 ? `${talent.years_exp}년차` : "신입"} · {talent.location}</p>
             </div>
           </div>

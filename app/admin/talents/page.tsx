@@ -217,7 +217,7 @@ export default function AdminTalentsPage() {
                     </span>
                   </div>
                   <p className="text-[13px] text-gray-500">
-                    {t.years_exp}년차 · {t.location} · {getAvailabilityLabel(t.availability)} · {t.desired_salary_krw}만원/월
+                    {t.years_exp}년차 · {t.location} · {getAvailabilityLabel(t.availability)} · {(t.salary_min_vnd / 1000000).toFixed(0)}~{(t.salary_max_vnd / 1000000).toFixed(0)}M VND
                   </p>
                   <div className="flex gap-1 mt-2">
                     {t.top_skills.map((skill) => (

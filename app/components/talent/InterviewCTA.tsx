@@ -29,7 +29,7 @@ export function InterviewCTA({ talent }: { talent: Talent }) {
         <div className="flex-1">
           <p className="text-[12px] text-gray-500 mb-1">희망 연봉 (월)</p>
           <p className="text-[18px] font-medium text-gray-900">
-            {talent.desired_salary_krw}만원
+            {(talent.salary_min_vnd / 1000000).toFixed(0)}~{(talent.salary_max_vnd / 1000000).toFixed(0)}M VND
           </p>
         </div>
         <button

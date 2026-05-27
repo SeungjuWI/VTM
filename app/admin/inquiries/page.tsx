@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Talent, toInitials } from "@/lib/types";
 import { TalentDetailModal } from "@/app/components/talent/TalentDetailModal";
-import { availabilityKR } from "@/lib/i18n";
+import { availabilityKR, translateRole } from "@/lib/i18n";
 
 const STAGES = [
   { key: "received", label: "접수" },
@@ -287,7 +287,7 @@ export default function InquiriesPage() {
                   </p>
                   {req.talent && (
                     <p className="text-[13px] text-gray-500 mt-0.5">
-                      → {req.talent.role} · {req.talent.years_exp}년차 · OVR {req.talent.ovr_score}
+                      → {translateRole(req.talent.role)} · {req.talent.years_exp}년차 · OVR {req.talent.ovr_score}
                     </p>
                   )}
                 </div>
@@ -357,7 +357,7 @@ export default function InquiriesPage() {
                       <span className="text-[12px] font-medium text-blue-500">{toInitials(selectedReq.talent.name)}</span>
                     </div>
                     <div className="flex-1">
-                      <p className="text-[13px] font-medium text-gray-900">{selectedReq.talent.role} · {selectedReq.talent.years_exp}년차</p>
+                      <p className="text-[13px] font-medium text-gray-900">{translateRole(selectedReq.talent.role)} · {selectedReq.talent.years_exp}년차</p>
                       <p className="text-[12px] text-gray-500">OVR {selectedReq.talent.ovr_score} · {availabilityKR[selectedReq.talent.availability]}</p>
                     </div>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#B0B8C1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4l4 4-4 4" /></svg>

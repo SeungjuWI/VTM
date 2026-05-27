@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Talent } from "@/lib/types";
+import { translateRole } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { getUserProfile } from "@/lib/supabase-auth";
 import Link from "next/link";
@@ -19,18 +20,21 @@ export default function TalentsContent({ talents }: { talents: Talent[] }) {
   const filteredTalents = useMemo(() => {
     let result = talents;
 
-    // 직무 필터
+    // 직무 필터 (번역된 role로 비교)
     if (roleFilter.length > 0) {
-      result = result.filter((t) => roleFilter.some((r) => t.role.toLowerCase().includes(r.toLowerCase())));
+      result = result.filter((t) => {
+        const translated = translateRole(t.role);
+        return roleFilter.includes(translated);
+      });
     }
 
     // 정렬
     result = [...result].sort((a, b) => {
       switch (sortOption) {
         case "salary_asc":
-          return a.desired_salary_krw - b.desired_salary_krw;
+          return a.salary_min_vnd - b.salary_min_vnd;
         case "salary_desc":
-          return b.desired_salary_krw - a.desired_salary_krw;
+          return b.salary_max_vnd - a.salary_max_vnd;
         case "exp_desc":
           return b.years_exp - a.years_exp;
         case "exp_asc":
@@ -113,6 +117,7 @@ export default function TalentsContent({ talents }: { talents: Talent[] }) {
         {/* 필터 칩 + 정렬 */}
         <div className="mb-5">
           <FilterChips
+            roles={talents.map((t) => t.role)}
             onRoleChange={(roles) => setRoleFilter(roles)}
             onSortChange={(sort) => setSortOption(sort)}
           />

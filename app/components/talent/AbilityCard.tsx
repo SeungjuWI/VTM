@@ -1,6 +1,7 @@
 "use client";
 
 import { Talent } from "@/lib/types";
+import { translateRole } from "@/lib/i18n";
 import { RadarChart } from "./RadarChart";
 import { AnimatedOVR } from "./AnimatedOVR";
 
@@ -42,7 +43,7 @@ export function AbilityCard({ talent }: { talent: Talent }) {
         <img src={talent.photo_url || "/default-profile.png"} alt="" className="w-[72px] h-[72px] rounded-full object-cover flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="text-[16px] font-medium text-gray-900 mb-1 leading-tight">
-            {talent.role}
+            {translateRole(talent.role)}
           </p>
           <p className="text-[14px] text-gray-600">
             {talent.years_exp > 0 ? `${talent.years_exp}년차` : "신입"} · {talent.location}
