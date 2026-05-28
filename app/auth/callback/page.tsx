@@ -12,31 +12,45 @@ export default function AuthCallbackPage() {
       if (code) {
         const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code);
 
-        if (session) {
-          // 프로필 확인: 승인된 유저 + admin/super_admin은 각각 다른 곳으로
-          const { data: profile } = await supabase
-            .from("user_profiles")
-            .select("status, role")
-            .eq("id", session.user.id)
-            .single();
-
-          if (profile?.role === "super_admin" || profile?.role === "admin") {
-            window.location.href = "/admin";
-          } else if (profile?.status === "approved") {
-            window.location.href = "/talents";
-          } else {
-            window.location.href = "/login";
+        if (error) {
+          console.error("Auth callback error:", error.message);
+          // code 교환 실패 시 기존 세션이 있는지 확인
+          const { data: { session: existingSession } } = await supabase.auth.getSession();
+          if (existingSession) {
+            return redirectByProfile(existingSession.user.id);
           }
+          window.location.href = "/login";
           return;
         }
 
-        if (error) {
-          console.error("Auth callback error:", error.message);
+        if (session) {
+          return redirectByProfile(session.user.id);
         }
       }
 
-      // fallback
+      // code 없으면 기존 세션 확인
+      const { data: { session: existingSession } } = await supabase.auth.getSession();
+      if (existingSession) {
+        return redirectByProfile(existingSession.user.id);
+      }
+
       window.location.href = "/login";
+    }
+
+    async function redirectByProfile(userId: string) {
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("status, role")
+        .eq("id", userId)
+        .single();
+
+      if (profile?.role === "super_admin" || profile?.role === "admin") {
+        window.location.href = "/admin";
+      } else if (profile?.status === "approved") {
+        window.location.href = "/talents";
+      } else {
+        window.location.href = "/login";
+      }
     }
 
     handleCallback();
