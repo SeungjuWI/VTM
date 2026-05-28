@@ -103,6 +103,7 @@ export default function InterviewsAdminPage() {
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkLoading, setBulkLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{ decision: string } | null>(null);
+  const [hideOverdue, setHideOverdue] = useState(false);
 
   const fetchSessions = async () => {
     setLoading(true);
@@ -194,6 +195,7 @@ export default function InterviewsAdminPage() {
   };
 
   const filtered = sessions.filter((s) => {
+    if (hideOverdue && isOverdue(s)) return false;
     if (companyFilter !== "all") {
       if (companyFilter === "none") { if (s.applied_company) return false; }
       else { if (s.applied_company !== companyFilter) return false; }
@@ -394,6 +396,12 @@ export default function InterviewsAdminPage() {
             </button>
           )}
         </div>
+
+        <label className="flex items-center gap-1.5 text-[13px] text-gray-600 cursor-pointer select-none whitespace-nowrap">
+          <input type="checkbox" checked={hideOverdue} onChange={(e) => setHideOverdue(e.target.checked)}
+            className="w-3.5 h-3.5 rounded border-gray-300 text-blue-500 focus:ring-blue-500" />
+          기한 마감 제외
+        </label>
       </div>
 
       {loading ? (
