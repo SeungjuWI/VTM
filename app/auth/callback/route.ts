@@ -12,18 +12,24 @@ export async function GET(request: Request) {
     )
     const { data: { session } } = await supabase.auth.exchangeCodeForSession(code)
 
-    if (session?.user) {
+    if (session) {
+      const { access_token, refresh_token } = session
+
+      // 프로필 확인: 승인된 유저만 /talents로, 나머지는 /login으로
       const { data: profile } = await supabase
         .from('user_profiles')
         .select('status')
         .eq('id', session.user.id)
         .single()
 
-      if (!profile || profile.status !== 'approved') {
-        return NextResponse.redirect(`${origin}/login`)
-      }
+      const destination = profile?.status === 'approved' ? '/talents' : '/login'
+
+      // 브라우저 supabase 클라이언트가 세션을 인식하도록 토큰을 hash로 전달
+      return NextResponse.redirect(
+        `${origin}${destination}#access_token=${access_token}&refresh_token=${refresh_token}&type=bearer`
+      )
     }
   }
 
-  return NextResponse.redirect(`${origin}/talents`)
+  return NextResponse.redirect(`${origin}/login`)
 }
