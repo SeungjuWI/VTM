@@ -5,7 +5,15 @@ import React, { useState } from "react";
 export default function ImportLegacyPage() {
   const [tsvData, setTsvData] = useState("");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<Record<string, unknown> | null>(null);
+  const [result, setResult] = useState<{
+    parsed: number;
+    dbDuplicate: number;
+    inserted: number;
+    errors: number;
+    parseErrors: number;
+    stats: { new: number; passed: number; ai_interview_passed: number; screening_failed: number; rejected: number };
+    errorMessages: string[];
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const preview = () => {
@@ -100,21 +108,21 @@ export default function ImportLegacyPage() {
             <h2 className="text-[15px] font-medium text-[#191F28] mb-3">임포트 결과</h2>
             <div className="grid grid-cols-2 gap-2 text-[13px]">
               <div className="text-[#8B95A1]">파싱된 후보자</div>
-              <div className="text-[#333D4B] font-medium">{result.parsed as number}명</div>
+              <div className="text-[#333D4B] font-medium">{result.parsed}명</div>
 
               <div className="text-[#8B95A1]">DB 중복 스킵</div>
-              <div className="text-[#333D4B] font-medium">{result.dbDuplicate as number}명</div>
+              <div className="text-[#333D4B] font-medium">{result.dbDuplicate}명</div>
 
               <div className="text-[#8B95A1]">삽입 성공</div>
-              <div className="text-[#1D9E75] font-medium">{result.inserted as number}명</div>
+              <div className="text-[#1D9E75] font-medium">{result.inserted}명</div>
 
               <div className="text-[#8B95A1]">삽입 실패</div>
-              <div className={`font-medium ${(result.errors as number) > 0 ? "text-red-500" : "text-[#333D4B]"}`}>
-                {result.errors as number}명
+              <div className={`font-medium ${result.errors > 0 ? "text-red-500" : "text-[#333D4B]"}`}>
+                {result.errors}명
               </div>
 
               <div className="text-[#8B95A1]">파싱 에러</div>
-              <div className="text-[#333D4B] font-medium">{result.parseErrors as number}건</div>
+              <div className="text-[#333D4B] font-medium">{result.parseErrors}건</div>
             </div>
 
             {result.stats && (
@@ -122,23 +130,23 @@ export default function ImportLegacyPage() {
                 <h3 className="text-[13px] font-medium text-[#191F28] mb-2">Pipeline 분류 (삽입된 건만)</h3>
                 <div className="grid grid-cols-2 gap-1.5 text-[12px]">
                   <div className="text-[#8B95A1]">스크리닝 전 (new)</div>
-                  <div className="text-[#333D4B]">{(result.stats as Record<string, number>).new}</div>
+                  <div className="text-[#333D4B]">{result.stats.new}</div>
                   <div className="text-[#8B95A1]">CV 합격 (passed)</div>
-                  <div className="text-[#3182F6]">{(result.stats as Record<string, number>).passed}</div>
+                  <div className="text-[#3182F6]">{result.stats.passed}</div>
                   <div className="text-[#8B95A1]">인터뷰 합격 (ai_interview_passed)</div>
-                  <div className="text-[#1D9E75]">{(result.stats as Record<string, number>).ai_interview_passed}</div>
+                  <div className="text-[#1D9E75]">{result.stats.ai_interview_passed}</div>
                   <div className="text-[#8B95A1]">CV 불합격 (screening_failed)</div>
-                  <div className="text-[#B0B8C1]">{(result.stats as Record<string, number>).screening_failed}</div>
+                  <div className="text-[#B0B8C1]">{result.stats.screening_failed}</div>
                   <div className="text-[#8B95A1]">불합격/withdraw (rejected)</div>
-                  <div className="text-[#B0B8C1]">{(result.stats as Record<string, number>).rejected}</div>
+                  <div className="text-[#B0B8C1]">{result.stats.rejected}</div>
                 </div>
               </div>
             )}
 
-            {(result.errorMessages as string[])?.length > 0 && (
+            {result.errorMessages?.length > 0 && (
               <div className="mt-4 pt-4 border-t border-[#F2F4F6]">
                 <h3 className="text-[13px] font-medium text-red-500 mb-2">에러 메시지</h3>
-                {(result.errorMessages as string[]).map((msg, i) => (
+                {result.errorMessages.map((msg, i) => (
                   <p key={i} className="text-[12px] text-red-400">{msg}</p>
                 ))}
               </div>
