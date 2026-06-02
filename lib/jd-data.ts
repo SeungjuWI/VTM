@@ -409,7 +409,23 @@ export function matchJobCode(appliedJob: string, allCodes?: string[]): string | 
   return null;
 }
 
-export async function loadAllJDs(supabaseClient: { from: (table: string) => { select: (columns: string) => Promise<{ data: JobDescriptionRow[] | null }> } }): Promise<Record<string, JobDescription>> {
+/**
+ * applied_job 문자열 → 표준 JD(코드/회사/포지션)로 해석.
+ * 코드(MT702 등)가 직접 박혀있지 않아도 matchJobCode의 패턴 폴백으로 해석한다.
+ * (예: "Website Developer" → MT702, "TikTok Shop & Shopify Manager" → WP602)
+ * 해석 불가하면 null.
+ */
+export function resolveJD(
+  appliedJob: string | null | undefined,
+  allJDs: Record<string, JobDescription>
+): { code: string; company: string; position: string } | null {
+  if (!appliedJob) return null;
+  const code = matchJobCode(appliedJob, Object.keys(allJDs));
+  if (!code || !allJDs[code]) return null;
+  return { code, company: allJDs[code].company, position: allJDs[code].position };
+}
+
+export async function loadAllJDs(supabaseClient: { from: (table: string) => { select: (columns: string) => PromiseLike<{ data: JobDescriptionRow[] | null }> } }): Promise<Record<string, JobDescription>> {
   const merged = { ...JD_MAP };
   const { data } = await supabaseClient.from("jd_definitions").select("*");
   if (data) {

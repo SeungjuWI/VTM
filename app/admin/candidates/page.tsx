@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { updateTalentVerification } from "@/lib/create-talent-card";
 import { useAdminI18n } from "@/lib/admin-i18n";
-import { JD_MAP, type JobDescription } from "@/lib/jd-data";
+import { JD_MAP, resolveJD, type JobDescription } from "@/lib/jd-data";
 import { getUserProfile } from "@/lib/supabase-auth";
 import ConfirmModal from "@/app/components/ConfirmModal";
 
@@ -297,28 +297,16 @@ export default function CandidatesPage() {
 
   const tabGroup = ALL_STEPS.find((tab) => tab.key === activeTab)!;
   const sources = Array.from(new Set(candidates.map((c) => c.source)));
-  // applied_job에서 allJDs를 통해 회사/포지션 추출
+  // applied_job에서 allJDs를 통해 회사/포지션 추출 (코드 기준 단일 해석)
+  const getCompany = (c: Candidate) => resolveJD(c.applied_job, allJDs)?.company ?? null;
+  const getPosition = (c: Candidate) => resolveJD(c.applied_job, allJDs)?.position ?? null;
+
   const companyOptions = Array.from(new Set(
-    candidates.map((c) => {
-      const code = c.applied_job?.match(/^([A-Z]+\d+)/)?.[1];
-      return code && allJDs[code] ? allJDs[code].company : null;
-    }).filter(Boolean)
+    candidates.map((c) => getCompany(c)).filter(Boolean)
   )) as string[];
   const positionOptions = Array.from(new Set(
-    candidates.map((c) => {
-      const code = c.applied_job?.match(/^([A-Z]+\d+)/)?.[1];
-      return code && allJDs[code] ? allJDs[code].position : null;
-    }).filter(Boolean)
+    candidates.map((c) => getPosition(c)).filter(Boolean)
   )) as string[];
-
-  const getCompany = (c: Candidate) => {
-    const code = c.applied_job?.match(/^([A-Z]+\d+)/)?.[1];
-    return code && allJDs[code] ? allJDs[code].company : null;
-  };
-  const getPosition = (c: Candidate) => {
-    const code = c.applied_job?.match(/^([A-Z]+\d+)/)?.[1];
-    return code && allJDs[code] ? allJDs[code].position : null;
-  };
 
   // 필터(소스/회사/포지션) 적용된 베이스 — 탭/검색 제외
   const filteredBase = candidates

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { loadAllJDs, resolveJD } from "@/lib/jd-data";
 
 function getSupabaseAdmin() {
   return createClient(
@@ -34,6 +35,8 @@ export async function GET() {
     }
   }
 
+  const allJDs = await loadAllJDs(supabase);
+
   const candidateIds = candidates.map((c) => c.id);
   const { data: sessions } = await supabase
     .from("interview_sessions")
@@ -66,11 +69,15 @@ export async function GET() {
       } catch { /* ignore */ }
     }
 
+    // JD 코드 기준으로 회사/포지션을 표준화 (raw 문자열 그룹핑으로 인한 중복 방지).
+    // 코드 해석 실패 시에만 기존 raw 값으로 폴백.
+    const jd = resolveJD(c.applied_job, allJDs);
+
     return {
       id: c.id,
       candidate_name: c.full_name || "",
-      applied_company: session?.applied_company || c.applied_company || "",
-      applied_position: session?.applied_position || c.applied_job || "",
+      applied_company: jd?.company || session?.applied_company || c.applied_company || "",
+      applied_position: jd?.position || session?.applied_position || c.applied_job || "",
       yoe: c.yoe || "",
       screening_score: screeningScore,
       strengths_ko: strengthsKo,
@@ -80,6 +87,13 @@ export async function GET() {
       completed_at: session?.completed_at || null,
     };
   });
+
+  // 표준화된 회사/포지션 기준으로 정렬 (같은 회사가 연속으로 묶이도록)
+  items.sort((a, b) =>
+    a.applied_company.localeCompare(b.applied_company) ||
+    a.applied_position.localeCompare(b.applied_position) ||
+    a.candidate_name.localeCompare(b.candidate_name)
+  );
 
   return NextResponse.json({ success: true, items });
 }

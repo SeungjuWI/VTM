@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 import { randomUUID } from "crypto";
+import { loadAllJDs, resolveJD } from "@/lib/jd-data";
 
 export const maxDuration = 60;
 
@@ -203,6 +204,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No candidates found" }, { status: 404 });
   }
 
+  const allJDs = await loadAllJDs(supabase);
+
   const results: { candidateId: string; name: string; email: string; code: string; sent: boolean; error?: string }[] = [];
 
   for (const c of candidates) {
@@ -237,7 +240,10 @@ export async function POST(req: NextRequest) {
       attempts++;
     }
 
-    const company = c.applied_company || c.applied_job || "the position";
+    // JD 코드 기준으로 회사/포지션 표준화 (해석 실패 시 raw 폴백)
+    const jd = resolveJD(c.applied_job, allJDs);
+    const company = jd?.company || c.applied_company || c.applied_job || "the position";
+    const position = jd?.position || c.applied_job || "";
     const threadId = randomUUID();
 
     // interview_session 생성
@@ -248,6 +254,7 @@ export async function POST(req: NextRequest) {
       candidate_email: c.email,
       candidate_phone: c.phone || null,
       applied_company: company,
+      applied_position: position,
       deadline: deadlineISO,
       status: "pending",
     });
