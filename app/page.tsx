@@ -344,8 +344,11 @@ function CtaSection() {
   );
 }
 
+const HERO_VIDEOS = ["/hero-1.mp4", "/hero-2.mp4", "/hero-3.mp4", "/hero-4.mp4"];
+
 export default function LandingPage() {
   const [selectedTalent, setSelectedTalent] = useState<Talent | null>(null);
+  const [heroVideo, setHeroVideo] = useState(0);
   const stepsRef = useRef<HTMLDivElement>(null);
   const stepsVisible = useInView(stepsRef, 0.3);
   const [stepTitleShow, setStepTitleShow] = useState(false);
@@ -368,10 +371,15 @@ export default function LandingPage() {
 
       {/* 히어로 — 풀스크린 배경 이미지 */}
       <section className="h-[calc(100vh-56px)] relative flex items-center justify-center overflow-hidden">
-        {/* 배경 이미지 */}
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: "url('/hero-bg.jpg')" }}
+        {/* 배경 영상 — 4개 순환 자동재생 */}
+        <video
+          key={heroVideo}
+          src={HERO_VIDEOS[heroVideo]}
+          autoPlay
+          muted
+          playsInline
+          onEnded={() => setHeroVideo((i) => (i + 1) % HERO_VIDEOS.length)}
+          className="absolute inset-0 w-full h-full object-cover scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-white/55 via-white/35 to-white/65" />
 
