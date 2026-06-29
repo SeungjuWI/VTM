@@ -1477,7 +1477,7 @@ function SendInterviewModal({ count, sampleName, sampleCompany, onConfirm, onClo
                   </p>
 
                   <p style={{ fontSize: 14, color: "#191F28", lineHeight: 1.8, margin: "0 0 8px" }}>
-                    This is <strong>VTM</strong>, the recruitment agency for <strong>{sampleCompany}</strong>. Congratulations on passing the document screening!
+                    This is <strong>KTC Support</strong>, the recruitment agency for <strong>{sampleCompany}</strong>. Congratulations on passing the document screening!
                   </p>
 
                   <p style={{ fontSize: 14, color: "#4E5968", lineHeight: 1.8, margin: "0 0 8px" }}>
@@ -1535,12 +1535,12 @@ function SendInterviewModal({ count, sampleName, sampleCompany, onConfirm, onClo
                     Best of luck!
                   </p>
                   <p style={{ fontSize: 14, color: "#191F28", lineHeight: 1.8, margin: "0 0 24px" }}>
-                    <strong>Sean</strong><br/>VTM Recruitment Team
+                    <strong>Sean</strong><br/>KTC Support Team
                   </p>
 
                   <div style={{ borderTop: "1px solid #E5E8EB", paddingTop: 16 }}>
                     <p style={{ fontSize: 11, color: "#B0B8C1", lineHeight: 1.6, margin: 0 }}>
-                      VTM Recruitment · Likelion
+                      KTC Support · Likelion
                     </p>
                   </div>
                 </div>

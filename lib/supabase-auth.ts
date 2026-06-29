@@ -23,7 +23,7 @@ export async function signInWithGoogle() {
 
 export async function signOut() {
   if (typeof window !== 'undefined') {
-    sessionStorage.removeItem('vtm:profile')
+    sessionStorage.removeItem('ktc-support:profile')
   }
   const { error } = await supabase.auth.signOut()
   return { error }
@@ -32,7 +32,7 @@ export async function signOut() {
 export async function getUserProfile(userId: string, skipCache = false): Promise<UserProfile | null> {
   // 캐시 확인
   if (!skipCache && typeof window !== 'undefined') {
-    const cached = sessionStorage.getItem('vtm:profile')
+    const cached = sessionStorage.getItem('ktc-support:profile')
     if (cached) {
       const parsed = JSON.parse(cached) as UserProfile
       if (parsed.id === userId) return parsed
@@ -51,7 +51,7 @@ export async function getUserProfile(userId: string, skipCache = false): Promise
 
   // 캐시 저장
   if (typeof window !== 'undefined') {
-    sessionStorage.setItem('vtm:profile', JSON.stringify(profile))
+    sessionStorage.setItem('ktc-support:profile', JSON.stringify(profile))
   }
 
   return profile

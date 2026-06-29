@@ -56,9 +56,9 @@ export function Header() {
     <header className="bg-white sticky top-0 z-50">
       <div className="mx-auto max-w-[1080px] px-5 h-[56px] flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <img src="/logo.png" alt="VTM" width={24} height={24} className="rounded-[4px]" />
+          <img src="/logo.png" alt="KTC Support" width={24} height={24} className="rounded-[4px]" />
           <span className="text-[18px] text-gray-900 tracking-tight" style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700 }}>
-            Vtm
+            KTC Support
           </span>
         </Link>
 

@@ -40,9 +40,9 @@ export async function POST(req: NextRequest) {
   try {
     if (payload.type === "signup") {
       await transporter.sendMail({
-        from: `"베팀 알림" <${process.env.GMAIL_USER}>`,
+        from: `"KTC Support 알림" <${process.env.GMAIL_USER}>`,
         to: ADMIN_EMAIL,
-        subject: `[베팀] 새 가입 신청: ${payload.companyName} - ${payload.contactName}`,
+        subject: `[KTC Support] 새 가입 신청: ${payload.companyName} - ${payload.contactName}`,
         html: `
           <div style="font-family: 'Apple SD Gothic Neo', 'Pretendard', sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 20px;">
             <h2 style="font-size: 18px; color: #191F28; margin: 0 0 20px;">새 가입 신청이 들어왔습니다</h2>
@@ -75,9 +75,9 @@ export async function POST(req: NextRequest) {
       });
     } else if (payload.type === "inquiry") {
       await transporter.sendMail({
-        from: `"베팀 알림" <${process.env.GMAIL_USER}>`,
+        from: `"KTC Support 알림" <${process.env.GMAIL_USER}>`,
         to: ADMIN_EMAIL,
-        subject: `[베팀] 인재 문의: ${payload.companyName} → ${payload.talentRole} ${payload.talentYearsExp}년차 (OVR ${payload.talentOvr})`,
+        subject: `[KTC Support] 인재 문의: ${payload.companyName} → ${payload.talentRole} ${payload.talentYearsExp}년차 (OVR ${payload.talentOvr})`,
         html: `
           <div style="font-family: 'Apple SD Gothic Neo', 'Pretendard', sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 20px;">
             <h2 style="font-size: 18px; color: #191F28; margin: 0 0 20px;">인재 문의가 들어왔습니다</h2>

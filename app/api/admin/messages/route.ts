@@ -29,7 +29,7 @@ function buildOutboundHtml(body: string, threadId: string): string {
   return `
     <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 20px;">
       <div style="margin-bottom: 28px;">
-        <img src="${LOGO_URL}" alt="VTM" width="36" height="36" style="border-radius: 6px;" />
+        <img src="${LOGO_URL}" alt="KTC Support" width="36" height="36" style="border-radius: 6px;" />
       </div>
       <div style="font-size: 15px; color: #191F28; line-height: 1.8; white-space: pre-wrap;">${body}</div>
       <div style="margin-top: 32px; text-align: center;">
@@ -43,7 +43,7 @@ function buildOutboundHtml(body: string, threadId: string): string {
       </p>
       <div style="border-top: 1px solid #E5E8EB; padding-top: 20px; margin-top: 32px;">
         <p style="font-size: 12px; color: #B0B8C1; line-height: 1.6; margin: 0;">
-          VTM Recruitment · Likelion
+          KTC Support · Likelion
         </p>
       </div>
     </div>
@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
   // 이메일 발송
   try {
     await transporter.sendMail({
-      from: `"VTM Recruitment" <${process.env.GMAIL_USER}>`,
+      from: `"KTC Support" <${process.env.GMAIL_USER}>`,
       to: toEmail,
       subject,
       html: bodyHtml,

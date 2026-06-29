@@ -18,17 +18,17 @@ export async function POST(req: NextRequest) {
 
   try {
     await transporter.sendMail({
-      from: `"베팀" <${process.env.GMAIL_USER}>`,
+      from: `"KTC Support" <${process.env.GMAIL_USER}>`,
       to: email,
-      subject: "[베팀] 가입이 승인되었습니다.",
+      subject: "[KTC Support] 가입이 승인되었습니다.",
       html: `
         <div style="font-family: 'Apple SD Gothic Neo', 'Pretendard', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
           <div style="margin-bottom: 28px;">
-            <img src="${process.env.NEXT_PUBLIC_BASE_URL || "https://vtm.kr"}/logo.png" alt="베팀" width="36" height="36" style="border-radius: 6px;" />
+            <img src="${process.env.NEXT_PUBLIC_BASE_URL || "https://vtm.kr"}/logo.png" alt="KTC Support" width="36" height="36" style="border-radius: 6px;" />
           </div>
           <p style="font-size: 15px; color: #191F28; line-height: 1.8; margin: 0 0 24px;">
             안녕하세요, ${name || "회원"}님.<br/>
-            베팀입니다.
+            KTC Support입니다.
           </p>
           <p style="font-size: 15px; color: #191F28; line-height: 1.8; margin: 0 0 8px;">
             가입 승인이 완료되었습니다.
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
           </p>
           <div style="border-top: 1px solid #E5E8EB; padding-top: 20px;">
             <p style="font-size: 12px; color: #B0B8C1; line-height: 1.6; margin: 0;">
-              베팀 · 멋쟁이사자처럼 신사업본부<br/>
+              KTC Support · 멋쟁이사자처럼 신사업본부<br/>
               문의: ktc@likelion.net
             </p>
           </div>

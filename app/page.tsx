@@ -260,7 +260,7 @@ function CompareSection() {
                     <path d="M6 14h16M16 8l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
 
-                  {/* 베팀 */}
+                  {/* KTC Support */}
                   <div className={`flex-1 text-center rounded-xl px-4 py-4 border-[2px] transition-all duration-500 ${phase >= 2 ? "border-blue-500 bg-blue-50/60 scale-[1.03]" : "border-gray-200 bg-white opacity-40"
                     }`}>
                     <p className={`text-[15px] font-[600] transition-all duration-500 ${phase >= 2 ? "text-blue-500" : "text-gray-300"
@@ -393,7 +393,7 @@ export default function LandingPage() {
               </p>
               <h1 className="text-[32px] md:text-[52px] font-[600] text-gray-900 leading-[1.2] tracking-tight animate-section animate-delay-1">
                 이력서 분석부터 면접까지,<br />
-                <span className="text-blue-500"><span className="font-[700]">베팀</span>이 다 해놨습니다</span>
+                <span className="text-blue-500"><span className="font-[700]">KTC Support</span>이 다 해놨습니다</span>
               </h1>
             </div>
           </div>
@@ -501,8 +501,8 @@ export default function LandingPage() {
       <footer className="border-t-[0.5px] border-gray-200/60 px-5 py-10">
         <div className="max-w-[1080px] mx-auto">
           <div className="flex items-center gap-2 mb-4">
-            <img src="/logo.png" alt="VTM" width={20} height={20} className="rounded-[3px]" />
-            <span className="text-[14px] text-gray-700" style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700 }}>Vtm</span>
+            <img src="/logo.png" alt="KTC Support" width={20} height={20} className="rounded-[3px]" />
+            <span className="text-[14px] text-gray-700" style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700 }}>KTC Support</span>
           </div>
           <div className="text-[12px] text-gray-500 leading-[20px]">
             <p>상호명: 멋쟁이사자처럼 · 대표: 나성영</p>

@@ -40,7 +40,7 @@ const translations: Record<string, Record<AdminLang, string>> = {
   // 사이드바 그룹
   "nav.group.internal": { ko: "내부 관리", en: "Internal", vi: "Nội bộ" },
   "nav.group.ktc": { ko: "KTC 채용", en: "KTC Recruiting", vi: "Tuyển dụng KTC" },
-  "nav.group.vtm": { ko: "VTM 인재 열람", en: "VTM Talents", vi: "Nhân tài VTM" },
+  "nav.group.vtm": { ko: "KTC Support 인재 열람", en: "KTC Support Talents", vi: "Nhân tài KTC Support" },
 
   // 사이드바
   "nav.users": { ko: "사용자 관리", en: "User Management", vi: "Quản lý người dùng" },

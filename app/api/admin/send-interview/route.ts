@@ -63,7 +63,7 @@ function buildEmailHtml(name: string, company: string, code: string, deadlineISO
   return `
     <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 20px;">
       <div style="margin-bottom: 28px;">
-        <img src="${LOGO_URL}" alt="VTM" width="36" height="36" style="border-radius: 6px;" />
+        <img src="${LOGO_URL}" alt="KTC Support" width="36" height="36" style="border-radius: 6px;" />
       </div>
 
       <p style="font-size: 15px; color: #191F28; line-height: 1.8; margin: 0 0 20px;">
@@ -71,7 +71,7 @@ function buildEmailHtml(name: string, company: string, code: string, deadlineISO
       </p>
 
       <p style="font-size: 15px; color: #191F28; line-height: 1.8; margin: 0 0 8px;">
-        This is <strong>VTM</strong>, the recruitment agency for <strong>${company}</strong>. Congratulations on passing the document screening!
+        This is <strong>KTC Support</strong>, the recruitment agency for <strong>${company}</strong>. Congratulations on passing the document screening!
       </p>
 
       <p style="font-size: 15px; color: #4E5968; line-height: 1.8; margin: 0 0 8px;">
@@ -134,12 +134,12 @@ function buildEmailHtml(name: string, company: string, code: string, deadlineISO
       </p>
 
       <p style="font-size: 15px; color: #191F28; line-height: 1.8; margin: 0 0 32px;">
-        <strong>Sean</strong><br/>VTM Recruitment Team
+        <strong>Sean</strong><br/>KTC Support Team
       </p>
 
       <div style="border-top: 1px solid #E5E8EB; padding-top: 20px;">
         <p style="font-size: 12px; color: #B0B8C1; line-height: 1.6; margin: 0;">
-          VTM Recruitment · Likelion
+          KTC Support · Likelion
         </p>
       </div>
     </div>
@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
     const emailHtml = buildEmailHtml(name, company, code, deadline, threadId);
     try {
       await transporter.sendMail({
-        from: `"VTM Recruitment" <${process.env.GMAIL_USER}>`,
+        from: `"KTC Support" <${process.env.GMAIL_USER}>`,
         to: body.testEmail,
         subject,
         html: emailHtml,
@@ -269,7 +269,7 @@ export async function POST(req: NextRequest) {
     const emailHtml = buildEmailHtml(c.full_name, company, code, deadline, threadId);
     try {
       await transporter.sendMail({
-        from: `"VTM Recruitment" <${process.env.GMAIL_USER}>`,
+        from: `"KTC Support" <${process.env.GMAIL_USER}>`,
         to: c.email,
         subject: emailSubject,
         html: emailHtml,

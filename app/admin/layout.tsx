@@ -18,7 +18,7 @@ const NAV_KEYS = [
   { href: "/admin/interviews", labelKey: "nav.interviews", icon: "interviews", group: "ktc" },
   { href: "/admin/messages", labelKey: "nav.messages", icon: "messages", group: "ktc" },
   { href: "/admin/delivery", labelKey: "nav.delivery", icon: "delivery", group: "ktc" },
-  // VTM 인재 열람
+  // KTC Support 인재 열람
   { href: "/admin/talents", labelKey: "nav.talents", icon: "talents", group: "vtm" },
   { href: "/admin/inquiries", labelKey: "nav.inquiries", icon: "inquiries", group: "vtm" },
 ];
@@ -179,9 +179,9 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         <div className="mx-auto max-w-[1080px] px-5 h-[56px] flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-2">
-              <img src="/logo.png" alt="VTM" width={24} height={24} className="rounded-[4px]" />
+              <img src="/logo.png" alt="KTC Support" width={24} height={24} className="rounded-[4px]" />
               <span className="text-[18px] text-gray-900 tracking-tight" style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700 }}>
-                Vtm
+                KTC Support
               </span>
             </Link>
             <span className="text-[12px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">관리자</span>
@@ -233,7 +233,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
                 </Link>
               );
             })}
-            {/* VTM 인재 열람 */}
+            {/* KTC Support 인재 열람 */}
             <div className="h-px bg-[#F2F4F6] my-2" />
             <p className="px-3 pt-1 pb-1.5 text-[11px] text-[#B0B8C1] tracking-wide">{t("nav.group.vtm")}</p>
             {NAV_KEYS.filter((i) => i.group === "vtm").map((item) => {

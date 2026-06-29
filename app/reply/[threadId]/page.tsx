@@ -81,13 +81,13 @@ export default function ReplyPage() {
     <div className="min-h-screen bg-[#F9FAFB] flex items-center justify-center px-5 py-10">
       <div className="bg-white rounded-2xl p-8 max-w-[480px] w-full">
         <div className="flex items-center gap-2 mb-6">
-          <img src="/logo.png" alt="VTM" width={28} height={28} className="rounded-[4px]" />
+          <img src="/logo.png" alt="KTC Support" width={28} height={28} className="rounded-[4px]" />
           <span className="text-[16px] text-[#191F28] font-medium" style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700 }}>
-            Vtm
+            KTC Support
           </span>
         </div>
 
-        <h1 className="text-[18px] font-medium text-[#191F28] mb-1">Reply to VTM</h1>
+        <h1 className="text-[18px] font-medium text-[#191F28] mb-1">Reply to KTC Support</h1>
         <p className="text-[13px] text-[#8B95A1] mb-6">
           Send your message below. / Gửi tin nhắn của bạn bên dưới.
         </p>

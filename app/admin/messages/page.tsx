@@ -456,7 +456,7 @@ export default function MessagesPage() {
                         <span className={`text-[11px] ${
                           msg.direction === "outbound" ? "text-white/70" : "text-[#8B95A1]"
                         }`}>
-                          {msg.direction === "outbound" ? "VTM" : (msg.to_name || msg.from_email)}
+                          {msg.direction === "outbound" ? "KTC Support" : (msg.to_name || msg.from_email)}
                         </span>
                         <span className={`text-[10px] ${
                           msg.direction === "outbound" ? "text-white/50" : "text-[#B0B8C1]"
